@@ -187,3 +187,15 @@ With multiple developers:
 - [US1], [US2], and [US3] labels are required for story-scoped tasks
 - Every task includes an exact file path or folder target to keep implementation executable and reviewable
 - The implementation should be validated with the existing pytest fixture pattern before merging
+
+---
+
+## Phase 7: Convergence
+
+- [ ] T026 CRITICAL Align the dehumidifier status request, response model, and state parser in src/pyvesync/devices/vesyncdehumidifier.py and src/pyvesync/models/dehumidifier_models.py with the real dehumidifier payload so refreshes apply state correctly per US1/AC2 (partial)
+- [ ] T027 Expand the LDH-H251S feature map, supported modes, and public dehumidifier state/control surface in src/pyvesync/device_map.py and related dehumidifier modules to cover the supported advanced controls exposed by the API per FR-006 (partial)
+- [ ] T028 Add fixture-backed regression coverage for get_timer, set_timer, and clear_timer in src/tests/test_dehumidifiers.py and src/tests/call_json_dehumidifiers.py per SC-004 (partial)
+- [ ] T029 Correct the recorded dehumidifier detail fixture in src/tests/api/vesyncdehumidifier/LDH-H251S.yaml so the discovery/state regression path validates the dehumidifier status method rather than the humidifier status method per FR-009 (contradicts)
+- [ ] T030 Update the supported-device documentation in README.md to match the implemented LDH-H251S dehumidifier support per FR-010 (contradicts)
+- [ ] T031 Rewrite the outdated humidifier-family summary, scope, and structure references in specs/001-dehumidifier-support/plan.md so the plan matches the delivered independent dehumidifier architecture per plan: architecture decision (contradicts)
+- [ ] T032 Update the completed Phase 2-6 task descriptions and referenced file paths in specs/001-dehumidifier-support/tasks.md to reflect the independent dehumidifier modules actually used by the implementation per plan: architecture decision (contradicts)
