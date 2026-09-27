@@ -265,7 +265,7 @@ pip install pyvesync
 
 ### Levoit Dehumidifiers
 
-1. Dehumidifier 30 Pint (LV-HD350)
+1. Smart Dehumidifier 25 Pint (LDH-H251S Series)
 
 ### Levoit Fans
 

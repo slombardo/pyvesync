@@ -14,7 +14,7 @@
 
 ## Summary
 
-Add VeSync dehumidifier support by extending the established humidifier-family architecture instead of creating a parallel device hierarchy. The implementation will map dehumidifier identifiers to the existing `HumidifierMap`/`VeSyncHumidifier` flow, expose every supported device command and state attribute surfaced by the VeSync API, and validate the behavior with the repo's fixture-driven pytest workflow.
+Add VeSync dehumidifier support as an independent device family that reuses the existing Bypass V2 transport and response-processing infrastructure. The implementation will map dehumidifier identifiers to `DehumidifierMap`/`VeSyncDehumidifier`, expose the supported device commands and verified state attributes surfaced by the VeSync API, and validate the behavior with the repo's fixture-driven pytest workflow.
 
 ## Technical Context
 
@@ -34,7 +34,7 @@ Add VeSync dehumidifier support by extending the established humidifier-family a
 
 **Constraints**: Must keep the public device contract stable, use the existing async `VeSync` patterns, and gate unsupported controls by the device feature map
 
-**Scale/Scope**: Add support for VeSync dehumidifier models under the current humidifier architecture while preserving compatibility with the existing WiFi device model and test harness
+**Scale/Scope**: Add support for VeSync dehumidifier models under an independent dehumidifier architecture while preserving compatibility with the existing WiFi device model and test harness
 
 ## Constitution Check
 
@@ -42,7 +42,7 @@ Add VeSync dehumidifier support by extending the established humidifier-family a
 
 This feature passes the constitution because it:
 
-- maintains the existing public device contract for humidifier-family devices
+- maintains the existing public device contract for an independent dehumidifier device family
 - stays within the async request pattern already enforced by the project
 - requires fixture-backed regression coverage for API parsing and command behavior
 - requires linting, type checks, and documentation updates for any user-visible change
@@ -66,26 +66,26 @@ specs/001-dehumidifier-support/
 ```text
 src/pyvesync/
 ├── base_devices/
-│   ├── humidifier_base.py
+│   ├── dehumidifier_base.py
 │   ├── vesyncbasedevice.py
 │   └── ...
 ├── const.py
 ├── device_map.py
 ├── devices/
-│   └── vesynchumidifier.py
+│   └── vesyncdehumidifier.py
 ├── models/
-│   └── humidifier_models.py
+│   └── dehumidifier_models.py
 ├── utils/
 └── ...
 
 tests/
-├── api/vesynchumidifier/
-├── call_json_humidifiers.py
-├── test_humidifiers.py
+├── api/vesyncdehumidifier/
+├── call_json_dehumidifiers.py
+├── test_dehumidifiers.py
 └── ...
 ```
 
-**Structure Decision**: Keep the feature inside the existing humidifier architecture. The likely modification points are `src/pyvesync/device_map.py`, `src/pyvesync/const.py`, `src/pyvesync/base_devices/humidifier_base.py`, and `src/pyvesync/devices/vesynchumidifier.py`, with recorded API fixtures under `src/tests/api/vesynchumidifier/`.
+**Structure Decision**: Implement the feature as its own dehumidifier architecture. The modification points are `src/pyvesync/device_map.py`, `src/pyvesync/const.py`, `src/pyvesync/base_devices/dehumidifier_base.py`, `src/pyvesync/devices/vesyncdehumidifier.py`, and `src/pyvesync/models/dehumidifier_models.py`, with recorded API fixtures under `src/tests/api/vesyncdehumidifier/`.
 
 ## Complexity Tracking
 

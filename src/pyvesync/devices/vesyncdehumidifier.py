@@ -16,7 +16,7 @@ from pyvesync.utils.device_mixins import (
     process_bypassv2_response,
     process_bypassv2_result,
 )
-from pyvesync.utils.helpers import Helpers, Timer, Validators
+from pyvesync.utils.helpers import Timer, Validators
 
 if TYPE_CHECKING:
     from pyvesync import VeSync
@@ -91,9 +91,9 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
         self.state.tank_in_place = (
             bool(resp_model.tankInPlace) if resp_model.tankInPlace is not None else None
         )
-        self.state.water_tank_full = bool(resp_model.waterTankFull or 0)
-        self.state.automatic_stop_config = bool(resp_model.autoStopSwitch or 0)
-        self.state.auto_stop_target_reached = bool(resp_model.autoStopState or 0)
+        self.state.water_tank_full = bool(resp_model.waterTankFull)
+        self.state.automatic_stop_config = bool(resp_model.autoStopSwitch)
+        self.state.auto_stop_target_reached = bool(resp_model.autoStopState)
         self.state.display_set_status = DeviceStatus.from_int(resp_model.screenSwitch)
         self.state.display_status = DeviceStatus.from_int(resp_model.screenState)
         self.state.schedule_count = resp_model.scheduleCount
