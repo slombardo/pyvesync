@@ -43,7 +43,7 @@ class DehumidifierDefaults:
 
 
 DEHUMIDIFIER_DETAILS = {
-    "LV-HD350": {  # Dehumidifier 30 Pint
+    "LDH-H251S": {  # Dehumidifier 30 Pint
         "powerSwitch": int(DehumidifierDefaults.device_status),
         "humidity": DehumidifierDefaults.humidity,
         "targetHumidity": DehumidifierDefaults.target_humidity,
@@ -68,10 +68,10 @@ the full API response is built."""
 
 
 DETAILS_RESPONSES = {
-    "LV-HD350": build_bypass_v2_response(inner_result=DEHUMIDIFIER_DETAILS["LV-HD350"]),
+    "LDH-H251S": build_bypass_v2_response(inner_result=DEHUMIDIFIER_DETAILS["LDH-H251S"]),
 }
 
 
 METHOD_RESPONSES = {
-    "LV-HD350": deepcopy(FunctionResponsesV2),
+    "LDH-H251S": deepcopy(FunctionResponsesV2),
 }
