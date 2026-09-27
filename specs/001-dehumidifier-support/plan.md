@@ -4,6 +4,14 @@
 
 **Input**: Feature specification from `/specs/001-dehumidifier-support/spec.md`
 
+> **Post-implementation revision**: This plan describes the original design of
+> mapping dehumidifiers into the existing `HumidifierMap`/`VeSyncHumidifier` flow.
+> Based on maintainer feedback that a dehumidifier should not be grouped under
+> `manager.devices.humidifiers`, the implementation was refactored into an
+> independent `Dehumidifier` product family (own `ProductTypes.DEHUMIDIFIER`,
+> `DehumidifierMap`, base/device/model modules, and `manager.devices.dehumidifiers`
+> container property) instead. See `tasks.md` for the list of affected files.
+
 ## Summary
 
 Add VeSync dehumidifier support by extending the established humidifier-family architecture instead of creating a parallel device hierarchy. The implementation will map dehumidifier identifiers to the existing `HumidifierMap`/`VeSyncHumidifier` flow, expose every supported device command and state attribute surfaced by the VeSync API, and validate the behavior with the repo's fixture-driven pytest workflow.

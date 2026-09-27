@@ -21,6 +21,7 @@ import call_json_bulbs
 import call_json_fans
 import call_json_purifiers
 import call_json_humidifiers
+import call_json_dehumidifiers
 import call_json_switches
 from utils import assert_test, parse_args
 
@@ -63,6 +64,7 @@ def test_device_tests():
     assert call_json_switches.SWITCHES_NUM == len(call_json_switches.DETAILS_RESPONSES)
     assert call_json_purifiers.PURIFIERS_NUM == len(call_json_purifiers.DETAILS_RESPONSES)
     assert call_json_humidifiers.HUMIDIFIERS_NUM == len(call_json_humidifiers.DETAILS_RESPONSES)
+    assert call_json_dehumidifiers.DEHUMIDIFIERS_NUM == len(call_json_dehumidifiers.DETAILS_RESPONSES)
 
 
 class TestGeneralAPI(TestBase):
@@ -81,4 +83,5 @@ class TestGeneralAPI(TestBase):
         assert len(self.manager.devices.fans) == call_json_fans.FANS_NUM
         assert len(self.manager.devices.switches) == call_json_switches.SWITCHES_NUM
         assert len(self.manager.devices.humidifiers) == call_json_humidifiers.HUMIDIFIERS_NUM
+        assert len(self.manager.devices.dehumidifiers) == call_json_dehumidifiers.DEHUMIDIFIERS_NUM
         assert len(self.manager.devices.air_purifiers) == call_json_purifiers.PURIFIERS_NUM

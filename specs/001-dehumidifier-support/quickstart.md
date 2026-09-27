@@ -1,5 +1,12 @@
 # Quickstart: VeSync Dehumidifier Support Validation
 
+> **Post-implementation revision**: Dehumidifiers are implemented as an independent
+> product family rather than part of the humidifier architecture described below.
+> Based on maintainer feedback that a dehumidifier should not be grouped under
+> `manager.devices.humidifiers`, use `src/tests/test_dehumidifiers.py` and the
+> `src/tests/api/vesyncdehumidifier/` fixtures in place of the humidifier paths
+> referenced in this document. See `tasks.md` for the list of affected files.
+
 ## Prerequisites
 
 - Python 3.11+
@@ -10,15 +17,15 @@
 
 ### 1. Device discovery
 
-Run the humidifier test set to confirm the library still recognizes existing humidifier models and can instantiate new dehumidifier mappings correctly.
+Run the dehumidifier test set to confirm the library still recognizes existing dehumidifier models and can instantiate new dehumidifier mappings correctly.
 
 ```bash
-pytest src/tests/test_humidifiers.py
+pytest src/tests/test_dehumidifiers.py
 ```
 
 Expected outcome:
 
-- tests pass for devices using the humidifier architecture
+- tests pass for devices using the dehumidifier architecture
 - no regression in model discovery or state parsing
 
 ### 2. Fixture authoring for new dehumidifier models
@@ -26,12 +33,12 @@ Expected outcome:
 When adding a new dehumidifier model:
 
 ```bash
-pytest src/tests/test_humidifiers.py --write_api
+pytest src/tests/test_dehumidifiers.py --write_api
 ```
 
 Expected outcome:
 
-- a fixture is created or updated under `src/tests/api/vesynchumidifier/`
+- a fixture is created or updated under `src/tests/api/vesyncdehumidifier/`
 - the recorded API payload matches the device's actual VeSync responses
 
 ### 3. Lint and type checks
