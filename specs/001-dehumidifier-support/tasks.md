@@ -199,3 +199,11 @@ With multiple developers:
 - [ ] T030 Update the supported-device documentation in README.md to match the implemented LDH-H251S dehumidifier support per FR-010 [gap: contradicts]
 - [ ] T031 Rewrite the outdated humidifier-family summary, scope, and structure references in specs/001-dehumidifier-support/plan.md so the plan matches the delivered independent dehumidifier architecture per plan: architecture decision [gap: contradicts]
 - [ ] T032 Update the completed Phase 2-6 task descriptions and referenced file paths in specs/001-dehumidifier-support/tasks.md to reflect the independent dehumidifier modules actually used by the implementation per plan: architecture decision [gap: contradicts]
+
+---
+
+## Phase 8: Convergence
+
+- [ ] T033 Align the verified dehumidifier setter method names and payload mappings in src/pyvesync/devices/vesyncdehumidifier.py, src/tests/call_json_dehumidifiers.py, and src/tests/api/vesyncdehumidifier/LDH-H251S.yaml with the protocol documented in specs/001-dehumidifier-support/research.md, including `setWorkMode` and the verified advanced-switch payload keys, per FR-005 [gap: partial]
+- [ ] T034 Add dehumidifier-specific response handling and regression coverage for successful setter envelopes without nested result payloads, nested validation failure code `11003000`, and outer `device timeout` responses with `result: null` in src/pyvesync/utils/device_mixins.py, src/pyvesync/devices/vesyncdehumidifier.py, src/tests/call_json_dehumidifiers.py, and src/tests/test_dehumidifiers.py per FR-007 [gap: partial]
+- [ ] T035 Extend the dehumidifier state/model contract and fixture-backed assertions in src/pyvesync/models/dehumidifier_models.py, src/pyvesync/base_devices/dehumidifier_base.py, src/pyvesync/devices/vesyncdehumidifier.py, src/tests/call_json_dehumidifiers.py, and src/tests/test_dehumidifiers.py to preserve the verified live status fields from specs/001-dehumidifier-support/research.md such as `errorCodes`, pump/drainage state, and distinct operating-state indicators per FR-003 [gap: partial]
