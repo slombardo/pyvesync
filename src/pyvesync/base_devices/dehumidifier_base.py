@@ -151,6 +151,11 @@ class VeSyncDehumidifierBase(VeSyncBaseToggleDevice):
         """Return True if the device supports the display toggle."""
         return DehumidifierFeatures.DISPLAY in self.features
 
+    @property
+    def supports_child_lock(self) -> bool:
+        """Return True if the device supports the child lock toggle."""
+        return DehumidifierFeatures.CHILD_LOCK in self.features
+
     @abstractmethod
     async def set_mode(self, mode: str) -> bool:
         """Set Dehumidifier Mode.

@@ -8,6 +8,14 @@
 
 **Input**: User description: "We need to add support for the vesync dehumidifiers. We need to allow for all the dehumidifier commands for vesync"
 
+> **Post-implementation revision**: Based on maintainer feedback that a dehumidifier
+> should not be grouped under `manager.devices.humidifiers`, the implementation was
+> refactored into an independent `Dehumidifier` product family with its own
+> `ProductTypes.DEHUMIDIFIER`, `DehumidifierMap`, `manager.devices.dehumidifiers`
+> container property, and dedicated device/base/model modules, rather than the
+> humidifier-family model described in the "Assumptions" section below. See
+> `tasks.md` for details of the affected files.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Discover and manage a supported dehumidifier (Priority: P1)

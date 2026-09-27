@@ -84,7 +84,7 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
         self.state.water_tank_full = bool(resp_model.waterTankFull)
         self.state.automatic_stop_config = bool(resp_model.autoStopSwitch)
         self.state.auto_stop_target_reached = bool(resp_model.autoStopState)
-        self.state.display_set_status = DeviceStatus.from_int(resp_model.screenState)
+        self.state.display_set_status = DeviceStatus.from_int(resp_model.screenSwitch)
         self.state.display_status = DeviceStatus.from_int(resp_model.screenState)
         self.state.child_lock = bool(resp_model.childLockSwitch)
         self.state.temperature = (
@@ -123,6 +123,14 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
 
     async def toggle_automatic_stop(self, toggle: bool | None = None) -> bool:
         """Toggle automatic stop when the water tank is full."""
+        if not self.supports_automatic_stop:
+            logger.warning(
+                '%s is a %s does not have automatic stop or it is not supported.',
+                self.device_name,
+                self.device_type,
+            )
+            return False
+
         if toggle is None:
             toggle = self.state.automatic_stop_config is not True
 
@@ -138,6 +146,14 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
 
     async def toggle_display(self, toggle: bool | None = None) -> bool:
         """Toggle the display on/off."""
+        if not self.supports_display:
+            logger.warning(
+                '%s is a %s does not have a display or it is not supported.',
+                self.device_name,
+                self.device_type,
+            )
+            return False
+
         if toggle is None:
             toggle = self.state.display_set_status != DeviceStatus.ON
 
@@ -213,7 +229,22 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
         self.state.connection_status = ConnectionStatus.ONLINE
         return True
 
+    async def set_mist_level(self, level: int) -> bool:
+        """Set the dehumidifier fan speed level.
+
+        Alias for `set_fan_speed` to match the humidifier device contract.
+        """
+        return await self.set_fan_speed(level)
+
     async def toggle_child_lock(self, toggle: bool | None = None) -> bool:
+        if not self.supports_child_lock:
+            logger.warning(
+                '%s is a %s does not have a child lock or it is not supported.',
+                self.device_name,
+                self.device_type,
+            )
+            return False
+
         if toggle is None:
             toggle = self.state.child_lock is not True
 

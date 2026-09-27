@@ -1,5 +1,13 @@
 # Research: VeSync Dehumidifier Support
 
+> **Post-implementation revision**: The decision below to nest dehumidifiers inside
+> the humidifier device family was superseded. Based on maintainer feedback that a
+> dehumidifier should not be grouped under `manager.devices.humidifiers`, the
+> implementation was refactored into an independent `Dehumidifier` product family
+> with its own `ProductTypes.DEHUMIDIFIER`, `DehumidifierMap`, base/device/model
+> modules, and `manager.devices.dehumidifiers` container property. See `tasks.md`
+> for the list of affected files.
+
 ## Decision
 
 Treat VeSync dehumidifiers as part of the existing humidifier device family and add model-specific mapping, state parsing, and command support to the established `VeSyncHumidifier` architecture.
