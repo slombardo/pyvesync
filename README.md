@@ -261,6 +261,10 @@ pip install pyvesync
 7. Superior 6000S
 8. Sprout Humidifier
 
+### Levoit Dehumidifiers
+
+1. Dehumidifier 30 Pint (LV-HD350)
+
 ### Levoit Fans
 
 1. 42 in. Tower Fan (LTF-F422S Series)

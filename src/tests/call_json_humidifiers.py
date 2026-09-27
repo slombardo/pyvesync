@@ -88,6 +88,8 @@ class HumidifierDefaults:
     breathing_lamp_time_interval = 10
     breathing_lamp_brightness_start = 0
     breathing_lamp_brightness_end = 50
+    # Dehumidifier Defaults
+    water_tank_full = False
 
 
 HUMIDIFIER_DETAILS: dict[str, Any] = {
@@ -351,6 +353,23 @@ HUMIDIFIER_DETAILS: dict[str, Any] = {
         "warmPower": HumidifierDefaults.warm_mist_enabled,
         "warmLevel": HumidifierDefaults.warm_mist_level,
     },
+    "LV-HD350": {  # Dehumidifier 30 Pint
+        "powerSwitch": int(HumidifierDefaults.device_status),
+        "humidity": HumidifierDefaults.humidity,
+        "targetHumidity": HumidifierDefaults.target_humidity,
+        "virtualLevel": HumidifierDefaults.virtual_mist_level,
+        "mistLevel": HumidifierDefaults.mist_level,
+        "workMode": HumidifierDefaults.humidifier_mode.value,
+        "waterTankFull": int(HumidifierDefaults.water_tank_full),
+        "autoStopSwitch": int(HumidifierDefaults.auto_stop),
+        "autoStopState": int(HumidifierDefaults.auto_stop_reached),
+        "screenSwitch": int(HumidifierDefaults.display_config),
+        "screenState": int(HumidifierDefaults.display),
+        "childLockSwitch": int(HumidifierDefaults.child_lock_switch),
+        "timerRemain": 0,
+        "errorCode": 0,
+        "temperature": HumidifierDefaults.temperature,
+    },
 }
 """This dictionary contains the details response for each humidifier.
 
@@ -370,6 +389,7 @@ DETAILS_RESPONSES = {
     "LUH-M101S-WUS": build_bypass_v2_response(inner_result=HUMIDIFIER_DETAILS["LUH-M101-WUS"]),
     "LEH-S601S": build_bypass_v2_response(inner_result=HUMIDIFIER_DETAILS["LEH-S601S"]),
     "LEH-B381S": build_bypass_v2_response(inner_result=HUMIDIFIER_DETAILS["LEH-B381S"]),
+    "LV-HD350": build_bypass_v2_response(inner_result=HUMIDIFIER_DETAILS["LV-HD350"]),
 }
 
 
@@ -395,6 +415,7 @@ METHOD_RESPONSES = {
     "LUH-M101S-WUS": deepcopy(FunctionResponsesV2),
     "LEH-S601S": deepcopy(FunctionResponsesV2),
     "LEH-B381S": deepcopy(FunctionResponsesV2),
+    "LV-HD350": deepcopy(FunctionResponsesV2),
 }
 
 

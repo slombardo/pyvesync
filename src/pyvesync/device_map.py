@@ -809,6 +809,25 @@ humidifier_modules = [
         model_name='Sprout Humidifier',
         setup_entry='LEH-B381S',
     ),
+    HumidifierMap(
+        class_name='VeSyncDehumidifier',
+        dev_types=['LV-HD350'],
+        features=[
+            HumidifierFeatures.CHILD_LOCK,
+            HumidifierFeatures.AUTO_STOP,
+            HumidifierFeatures.WATER_TANK_FULL,
+        ],
+        mist_modes={
+            HumidifierModes.AUTO: 'auto',
+            HumidifierModes.MANUAL: 'manual',
+        },
+        mist_levels=list(range(1, 4)),
+        target_minmax=(30, 80),
+        device_alias='Dehumidifier 30 Pint',
+        model_display='LV-HD350 Series',
+        model_name='Dehumidifier 30 Pint',
+        setup_entry='LV-HD350',
+    ),
 ]
 """List of ['HumidifierMap'][pyvesync.device_map.HumidifierMap] configuration
 objects for humidifier devices."""

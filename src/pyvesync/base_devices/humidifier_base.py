@@ -50,6 +50,7 @@ class HumidifierState(DeviceState):
         warm_mist_enabled (bool): Warm mist enabled status.
         warm_mist_level (int): Warm mist level.
         water_lacks (bool): Water lacks status.
+        water_tank_full (bool): Water tank full status, used by dehumidifiers.
         water_tank_lifted (bool): Water tank lifted status.
     """
 
@@ -88,6 +89,7 @@ class HumidifierState(DeviceState):
         'warm_mist_level',
         'water_lacks',
         'water_lacks_drying_switch',
+        'water_tank_full',
         'water_tank_lifted',
     )
 
@@ -131,6 +133,7 @@ class HumidifierState(DeviceState):
         self.warm_mist_level: int | None = None
         self.water_lacks: bool = False
         self.water_tank_lifted: bool = False
+        self.water_tank_full: bool = False
         self.child_lock: bool | None = None
         self.temperature: float | None = None  # Fahrenheit
         # Superior 6000S States / Sprout
@@ -175,6 +178,18 @@ class HumidifierState(DeviceState):
     def auto_enabled(self) -> bool:
         """Return True if auto mode is enabled."""
         return self.mode in [HumidifierModes.AUTO, self.mode, HumidifierModes.HUMIDITY]
+
+    @property
+    def fan_speed(self) -> int | None:
+        """Return the fan/mist output level.
+
+        Alias for `mist_level`, used by devices such as dehumidifiers where
+        "fan speed" is a more accurate description than "mist level".
+
+        Returns:
+            int | None: Current fan/mist output level.
+        """
+        return self.mist_level
 
     @property
     def drying_mode_state(self) -> str | None:
@@ -316,6 +331,14 @@ class VeSyncHumidifier(VeSyncBaseToggleDevice):
     def supports_drying_mode(self) -> bool:
         """Return True if the humidifier supports drying mode."""
         return HumidifierFeatures.DRYING_MODE in self.features
+
+    @property
+    def supports_water_tank_full(self) -> bool:
+        """Return True if the device reports a water tank full status.
+
+        Used by dehumidifiers to indicate the collection tank needs emptying.
+        """
+        return HumidifierFeatures.WATER_TANK_FULL in self.features
 
     async def toggle_automatic_stop(self, toggle: bool | None = None) -> bool:
         """Toggle automatic stop.

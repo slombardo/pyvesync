@@ -502,6 +502,7 @@ class HumidifierFeatures(Features):
         AUTO_STOP: Auto stop when target humidity is reached.
             Different from auto, which adjusts fan level to maintain humidity.
         RGB_NIGHTLIGHT: RGB nightlight with color control.
+        WATER_TANK_FULL: Water tank full status, used by dehumidifiers.
     """
 
     ONOFF = 'onoff'
@@ -513,6 +514,7 @@ class HumidifierFeatures(Features):
     NIGHTLIGHT_BRIGHTNESS = 'nightlight_brightness'
     DRYING_MODE = 'drying_mode'
     RGB_NIGHTLIGHT = 'rgb_nightlight'
+    WATER_TANK_FULL = 'water_tank_full'
 
 
 class PurifierFeatures(Features):
