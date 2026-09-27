@@ -6,11 +6,11 @@ set_auto_mode:
     acceptLanguage: en
     accountID: sample_id
     appVersion: 5.6.60
-    cid: LV-HD350-CID
+    cid: LDH-H251S-CID
     configModel: ConfigModule
     configModule: ConfigModule
     debugMode: false
-    deviceId: LV-HD350-CID
+    deviceId: LDH-H251S-CID
     method: bypassV2
     payload:
       data:
@@ -33,11 +33,11 @@ set_fan_speed:
     acceptLanguage: en
     accountID: sample_id
     appVersion: 5.6.60
-    cid: LV-HD350-CID
+    cid: LDH-H251S-CID
     configModel: ConfigModule
     configModule: ConfigModule
     debugMode: false
-    deviceId: LV-HD350-CID
+    deviceId: LDH-H251S-CID
     method: bypassV2
     payload:
       data:
@@ -62,11 +62,11 @@ set_humidity:
     acceptLanguage: en
     accountID: sample_id
     appVersion: 5.6.60
-    cid: LV-HD350-CID
+    cid: LDH-H251S-CID
     configModel: ConfigModule
     configModule: ConfigModule
     debugMode: false
-    deviceId: LV-HD350-CID
+    deviceId: LDH-H251S-CID
     method: bypassV2
     payload:
       data:
@@ -89,11 +89,11 @@ set_manual_mode:
     acceptLanguage: en
     accountID: sample_id
     appVersion: 5.6.60
-    cid: LV-HD350-CID
+    cid: LDH-H251S-CID
     configModel: ConfigModule
     configModule: ConfigModule
     debugMode: false
-    deviceId: LV-HD350-CID
+    deviceId: LDH-H251S-CID
     method: bypassV2
     payload:
       data:
@@ -116,11 +116,11 @@ turn_off:
     acceptLanguage: en
     accountID: sample_id
     appVersion: 5.6.60
-    cid: LV-HD350-CID
+    cid: LDH-H251S-CID
     configModel: ConfigModule
     configModule: ConfigModule
     debugMode: false
-    deviceId: LV-HD350-CID
+    deviceId: LDH-H251S-CID
     method: bypassV2
     payload:
       data:
@@ -144,11 +144,11 @@ turn_off_automatic_stop:
     acceptLanguage: en
     accountID: sample_id
     appVersion: 5.6.60
-    cid: LV-HD350-CID
+    cid: LDH-H251S-CID
     configModel: ConfigModule
     configModule: ConfigModule
     debugMode: false
-    deviceId: LV-HD350-CID
+    deviceId: LDH-H251S-CID
     method: bypassV2
     payload:
       data:
@@ -171,11 +171,11 @@ turn_off_child_lock:
     acceptLanguage: en
     accountID: sample_id
     appVersion: 5.6.60
-    cid: LV-HD350-CID
+    cid: LDH-H251S-CID
     configModel: ConfigModule
     configModule: ConfigModule
     debugMode: false
-    deviceId: LV-HD350-CID
+    deviceId: LDH-H251S-CID
     method: bypassV2
     payload:
       data:
@@ -198,11 +198,11 @@ turn_off_display:
     acceptLanguage: en
     accountID: sample_id
     appVersion: 5.6.60
-    cid: LV-HD350-CID
+    cid: LDH-H251S-CID
     configModel: ConfigModule
     configModule: ConfigModule
     debugMode: false
-    deviceId: LV-HD350-CID
+    deviceId: LDH-H251S-CID
     method: bypassV2
     payload:
       data:
@@ -225,11 +225,11 @@ turn_on:
     acceptLanguage: en
     accountID: sample_id
     appVersion: 5.6.60
-    cid: LV-HD350-CID
+    cid: LDH-H251S-CID
     configModel: ConfigModule
     configModule: ConfigModule
     debugMode: false
-    deviceId: LV-HD350-CID
+    deviceId: LDH-H251S-CID
     method: bypassV2
     payload:
       data:
@@ -253,11 +253,11 @@ turn_on_automatic_stop:
     acceptLanguage: en
     accountID: sample_id
     appVersion: 5.6.60
-    cid: LV-HD350-CID
+    cid: LDH-H251S-CID
     configModel: ConfigModule
     configModule: ConfigModule
     debugMode: false
-    deviceId: LV-HD350-CID
+    deviceId: LDH-H251S-CID
     method: bypassV2
     payload:
       data:
@@ -280,11 +280,11 @@ turn_on_child_lock:
     acceptLanguage: en
     accountID: sample_id
     appVersion: 5.6.60
-    cid: LV-HD350-CID
+    cid: LDH-H251S-CID
     configModel: ConfigModule
     configModule: ConfigModule
     debugMode: false
-    deviceId: LV-HD350-CID
+    deviceId: LDH-H251S-CID
     method: bypassV2
     payload:
       data:
@@ -307,11 +307,11 @@ turn_on_display:
     acceptLanguage: en
     accountID: sample_id
     appVersion: 5.6.60
-    cid: LV-HD350-CID
+    cid: LDH-H251S-CID
     configModel: ConfigModule
     configModule: ConfigModule
     debugMode: false
-    deviceId: LV-HD350-CID
+    deviceId: LDH-H251S-CID
     method: bypassV2
     payload:
       data:
@@ -334,11 +334,11 @@ update:
     acceptLanguage: en
     accountID: sample_id
     appVersion: 5.6.60
-    cid: LV-HD350-CID
+    cid: LDH-H251S-CID
     configModel: ConfigModule
     configModule: ConfigModule
     debugMode: false
-    deviceId: LV-HD350-CID
+    deviceId: LDH-H251S-CID
     method: bypassV2
     payload:
       data: {}
