@@ -129,10 +129,6 @@ class TestHumidifiers(TestBase):
         "LUH-O451S-WEU": [
             ["set_rgb_nightlight", {"power": True, "brightness": 100, "red": 252, "green": 50, "blue": 0}],
         ],
-        "LV-HD350": [
-            ["turn_on_child_lock"],
-            ["turn_off_child_lock"],
-        ],
     }
 
     def test_details(self, setup_entry, method):

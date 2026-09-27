@@ -193,33 +193,6 @@ class DryingModeModel(ResponseBaseModel):
     dryingRemain: int
 
 
-# Models for the VeSync Dehumidifier
-
-
-@dataclass
-class DehumidifierResult(InnerHumidifierBaseResult):
-    """Dehumidifier Result Model.
-
-    Inherits from InnerHumidifierBaseResult.
-    """
-
-    powerSwitch: int
-    humidity: int
-    targetHumidity: int
-    virtualLevel: int
-    mistLevel: int
-    workMode: str
-    waterTankFull: int
-    autoStopSwitch: int
-    autoStopState: int
-    screenSwitch: int
-    screenState: int
-    childLockSwitch: int
-    timerRemain: int
-    errorCode: int
-    temperature: int
-
-
 # Models for the Levoit 1000S Humidifier
 
 

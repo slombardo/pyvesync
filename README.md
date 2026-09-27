@@ -13,9 +13,10 @@ pyvesync is a library to manage VeSync compatible [smart home devices](#supporte
 3. Fans
 4. Air Purifiers
 5. Humidifiers
-6. Bulbs
-7. Air Fryers
-8. Thermostats
+6. Dehumidifiers
+7. Bulbs
+8. Air Fryers
+9. Thermostats
 
 See the [supported devices](https://webdjoe.github.io/pyvesync/latest/supported_devices/) page for a complete list of supported devices and device types.
 
@@ -157,10 +158,11 @@ There is a new nomenclature for product types that defines the device class. The
 2. `switch` - Wall switches
 3. `fan` - Fans (not air purifiers or humidifiers)
 4. `purifier` - Air purifiers (not humidifiers)
-5. `humidifier` - Humidifiers (not air purifiers)
-6. `bulb` - Light bulbs (not dimmers or switches)
-7. `airfryer` - Air fryers
-8. `thermostat` - Thermostats
+5. `humidifier` - Humidifiers (not air purifiers or dehumidifiers)
+6. `dehumidifier` - Dehumidifiers (not humidifiers)
+7. `bulb` - Light bulbs (not dimmers or switches)
+8. `airfryer` - Air fryers
+9. `thermostat` - Thermostats
 
 See [Supported Devices](#supported-devices) for a complete list of supported devices and models.
 
@@ -380,6 +382,7 @@ manager.devices.fans = [VeSyncFanInstances]
 manager.devices.bulbs = [VeSyncBulbInstances]
 manager.devices.air_purifiers = [VeSyncPurifierInstances]
 manager.devices.humidifiers = [VeSyncHumidifierInstances]
+manager.devices.dehumidifiers = [VeSyncDehumidifierInstances]
 manager.devices.air_fryers = [VeSyncAirFryerInstances]
 manager.devices.thermostats = [VeSyncThermostatInstances]
 

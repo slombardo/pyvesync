@@ -8,6 +8,7 @@ import call_json_outlets
 import call_json_bulbs
 import call_json_fans
 import call_json_humidifiers
+import call_json_dehumidifiers
 import call_json_purifiers
 
 
@@ -26,6 +27,7 @@ ALL_DEVICE_MAP_MODULES: list[DeviceMapTemplate] = [
     *call_json_outlets.outlet_modules,
     *call_json_switches.switch_modules,
     *call_json_humidifiers.humidifier_modules,
+    *call_json_dehumidifiers.dehumidifier_modules,
     *call_json_purifiers.purifier_modules
 ]
 

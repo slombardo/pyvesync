@@ -1,5 +1,18 @@
 # Tasks: VeSync Dehumidifier Support
 
+> **Post-implementation revision**: The initial implementation nested dehumidifier
+> support inside the existing Humidifier product family (`src/pyvesync/base_devices/humidifier_base.py`,
+> `src/pyvesync/devices/vesynchumidifier.py`, `src/pyvesync/models/humidifier_models.py`,
+> and `src/tests/api/vesynchumidifier/`), as originally decided in `research.md`. Based on
+> maintainer feedback that a dehumidifier should not be grouped under `manager.devices.humidifiers`,
+> the implementation was refactored into an independent `Dehumidifier` product family with its
+> own `ProductTypes.DEHUMIDIFIER`, `DehumidifierMap`, `src/pyvesync/base_devices/dehumidifier_base.py`,
+> `src/pyvesync/devices/vesyncdehumidifier.py`, `src/pyvesync/models/dehumidifier_models.py`,
+> `manager.devices.dehumidifiers` container property, and `src/tests/api/vesyncdehumidifier/`
+> fixtures/tests. The task descriptions below reflect the original (superseded) plan for
+> historical reference; the file paths referenced in Phase 2-5 for the dehumidifier device
+> logic have moved as described above.
+
 **Input**: Design documents from `/specs/001-dehumidifier-support/`
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
