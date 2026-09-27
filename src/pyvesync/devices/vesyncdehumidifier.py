@@ -11,7 +11,11 @@ from pyvesync.base_devices.dehumidifier_base import VeSyncDehumidifierBase
 from pyvesync.const import ConnectionStatus, DeviceStatus
 from pyvesync.models import dehumidifier_models as models
 from pyvesync.models.bypass_models import ResultV2GetTimer, ResultV2SetTimer
-from pyvesync.utils.device_mixins import BypassV2Mixin, process_bypassv2_result
+from pyvesync.utils.device_mixins import (
+    BypassV2Mixin,
+    process_bypassv2_response,
+    process_bypassv2_result,
+)
 from pyvesync.utils.helpers import Helpers, Timer, Validators
 
 if TYPE_CHECKING:
@@ -79,25 +83,93 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
 
         self.state.target_humidity = resp_model.targetHumidity
         self.state.humidity = resp_model.humidity
-        self.state.fan_speed = resp_model.mistLevel
-        self.state.fan_virtual_speed = resp_model.virtualLevel
-        self.state.water_tank_full = bool(resp_model.waterTankFull)
-        self.state.automatic_stop_config = bool(resp_model.autoStopSwitch)
-        self.state.auto_stop_target_reached = bool(resp_model.autoStopState)
+        self.state.work_state = resp_model.workState
+        self.state.fan_speed = resp_model.fanSpeedLevel
+        self.state.manual_fan_speed = resp_model.manualSpeedLevel
+        self.state.fan_virtual_speed = resp_model.manualSpeedLevel
+        self.state.tank_level = resp_model.tankLevel
+        self.state.tank_in_place = (
+            bool(resp_model.tankInPlace) if resp_model.tankInPlace is not None else None
+        )
+        self.state.water_tank_full = bool(resp_model.waterTankFull or 0)
+        self.state.automatic_stop_config = bool(resp_model.autoStopSwitch or 0)
+        self.state.auto_stop_target_reached = bool(resp_model.autoStopState or 0)
         self.state.display_set_status = DeviceStatus.from_int(resp_model.screenSwitch)
         self.state.display_status = DeviceStatus.from_int(resp_model.screenState)
-        self.state.child_lock = bool(resp_model.childLockSwitch)
+        self.state.schedule_count = resp_model.scheduleCount
+        self.state.auto_start = (
+            bool(resp_model.autoStartSwitch)
+            if resp_model.autoStartSwitch is not None
+            else None
+        )
+        self.state.error_codes = list(resp_model.errorCodes)
+        self.state.filter_life_percent = resp_model.filterLifePercent
+        self.state.filter_remaining_days = resp_model.filterRemainingDays
+        self.state.reset_filter_date = resp_model.resetFilterDate
+        self.state.child_lock = (
+            bool(resp_model.childLockSwitch)
+            if resp_model.childLockSwitch is not None
+            else None
+        )
+        self.state.mute_status = DeviceStatus.from_int(resp_model.muteSwitch)
+        self.state.power_saving_status = DeviceStatus.from_int(
+            resp_model.powerSavingSwitch
+        )
+        self.state.power_saving_active = (
+            bool(resp_model.powerSavingState)
+            if resp_model.powerSavingState is not None
+            else None
+        )
+        self.state.power_saving_time_sec = resp_model.powerSavingTimeSec
+        self.state.pump_installed = (
+            bool(resp_model.pumpInPlace) if resp_model.pumpInPlace is not None else None
+        )
+        self.state.pump_enabled = (
+            bool(resp_model.pumpEnable) if resp_model.pumpEnable is not None else None
+        )
+        self.state.pump_working = (
+            bool(resp_model.pumpWorking) if resp_model.pumpWorking is not None else None
+        )
+        self.state.water_sensor_in_place = (
+            bool(resp_model.waterSensorInPlace)
+            if resp_model.waterSensorInPlace is not None
+            else None
+        )
+        self.state.water_sensor_detects_water = (
+            bool(resp_model.waterSensorDetectsWater)
+            if resp_model.waterSensorDetectsWater is not None
+            else None
+        )
+        self.state.mold_removal_reminder = (
+            bool(resp_model.moldRemovalRemind)
+            if resp_model.moldRemovalRemind is not None
+            else None
+        )
+        self.state.reach_target = (
+            bool(resp_model.reachTargetState)
+            if resp_model.reachTargetState is not None
+            else None
+        )
+        self.state.drainage_mode = resp_model.drainageTypeConfig
+        self.state.compressor_state = DeviceStatus.from_int(resp_model.compressorState)
+        self.state.coil_temperature = resp_model.coilTemp
+        self.state.exhaust_pipe_temperature = resp_model.exhaustPipeTemp
+        self.state.actual_run_level = resp_model.actualRunLevel
         self.state.temperature = (
-            resp_model.temperature / 10
-        )  # Fahrenheit but without decimals
+            resp_model.tempInF
+            if resp_model.tempInF is not None
+            else resp_model.temperature
+        )
         if resp_model.timerRemain > 0:
             self.state.timer = Timer(
                 resp_model.timerRemain,
                 DeviceStatus.from_bool(self.state.device_status != DeviceStatus.ON),
             )
+        else:
+            self.state.timer = None
 
     async def get_details(self) -> None:
-        r_dict = await self.call_bypassv2_api('getHumidifierStatus')
+        r_dict = await self.call_bypassv2_api('getDeHumidifierStatus')
         r_model = process_bypassv2_result(
             self, logger, 'get_details', r_dict, models.DehumidifierResult
         )
@@ -113,7 +185,7 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
 
         payload_data = {'powerSwitch': int(toggle), 'switchIdx': 0}
         r_dict = await self.call_bypassv2_api('setSwitch', payload_data)
-        r = Helpers.process_dev_response(logger, 'toggle_switch', self, r_dict)
+        r = process_bypassv2_response(self, logger, 'toggle_switch', r_dict)
         if r is None:
             return False
 
@@ -136,7 +208,7 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
 
         payload_data = {'autoStopSwitch': int(toggle)}
         r_dict = await self.call_bypassv2_api('setAutoStopSwitch', payload_data)
-        r = Helpers.process_dev_response(logger, 'toggle_automatic_stop', self, r_dict)
+        r = process_bypassv2_response(self, logger, 'toggle_automatic_stop', r_dict)
         if r is None:
             return False
 
@@ -159,7 +231,7 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
 
         payload_data = {'screenSwitch': int(toggle)}
         r_dict = await self.call_bypassv2_api('setDisplay', payload_data)
-        r = Helpers.process_dev_response(logger, 'set_display', self, r_dict)
+        r = process_bypassv2_response(self, logger, 'set_display', r_dict)
         if r is None:
             return False
 
@@ -179,7 +251,7 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
 
         payload_data = {'targetHumidity': humidity}
         r_dict = await self.call_bypassv2_api('setTargetHumidity', payload_data)
-        r = Helpers.process_dev_response(logger, 'set_humidity', self, r_dict)
+        r = process_bypassv2_response(self, logger, 'set_humidity', r_dict)
         if r is None:
             return False
 
@@ -199,9 +271,9 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
             return False
 
         payload_data = {'workMode': self.modes[mode]}
-        r_dict = await self.call_bypassv2_api('setHumidityMode', payload_data)
+        r_dict = await self.call_bypassv2_api('setWorkMode', payload_data)
 
-        r = Helpers.process_dev_response(logger, 'set_humidity_mode', self, r_dict)
+        r = process_bypassv2_response(self, logger, 'set_work_mode', r_dict)
         if r is None:
             return False
 
@@ -220,7 +292,7 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
 
         payload_data = {'levelIdx': 0, 'virtualLevel': level, 'levelType': 'mist'}
         r_dict = await self.call_bypassv2_api('setVirtualLevel', payload_data)
-        r = Helpers.process_dev_response(logger, 'set_fan_speed', self, r_dict)
+        r = process_bypassv2_response(self, logger, 'set_fan_speed', r_dict)
         if r is None:
             return False
 
@@ -250,11 +322,109 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
 
         payload_data = {'childLockSwitch': int(toggle)}
         r_dict = await self.call_bypassv2_api('setChildLock', payload_data)
-        r = Helpers.process_dev_response(logger, 'toggle_child_lock', self, r_dict)
+        r = process_bypassv2_response(self, logger, 'toggle_child_lock', r_dict)
         if r is None:
             return False
 
         self.state.child_lock = toggle
+        self.state.connection_status = ConnectionStatus.ONLINE
+        return True
+
+    async def toggle_mute(self, toggle: bool | None = None) -> bool:
+        """Toggle mute on/off."""
+        if not self.supports_mute:
+            logger.warning(
+                '%s is a %s does not have mute or it is not supported.',
+                self.device_name,
+                self.device_type,
+            )
+            return False
+        if toggle is None:
+            toggle = self.state.mute_status != DeviceStatus.ON
+        payload_data = {'muteSwitch': int(toggle)}
+        r_dict = await self.call_bypassv2_api('setMuteSwitch', payload_data)
+        r = process_bypassv2_response(self, logger, 'toggle_mute', r_dict)
+        if r is None:
+            return False
+        self.state.mute_status = DeviceStatus.from_bool(toggle)
+        self.state.connection_status = ConnectionStatus.ONLINE
+        return True
+
+    async def toggle_power_saving(self, toggle: bool | None = None) -> bool:
+        """Toggle power-saving on/off."""
+        if not self.supports_power_saving:
+            logger.warning(
+                '%s is a %s does not have power-saving or it is not supported.',
+                self.device_name,
+                self.device_type,
+            )
+            return False
+        if toggle is None:
+            toggle = self.state.power_saving_status != DeviceStatus.ON
+        payload_data = {'powerSavingSwitch': int(toggle)}
+        r_dict = await self.call_bypassv2_api('setPowerSavingSwitch', payload_data)
+        r = process_bypassv2_response(self, logger, 'toggle_power_saving', r_dict)
+        if r is None:
+            return False
+        self.state.power_saving_status = DeviceStatus.from_bool(toggle)
+        self.state.connection_status = ConnectionStatus.ONLINE
+        return True
+
+    async def toggle_auto_start(self, toggle: bool | None = None) -> bool:
+        """Toggle auto-start on/off."""
+        if not self.supports_auto_start:
+            logger.warning(
+                '%s is a %s does not have auto-start or it is not supported.',
+                self.device_name,
+                self.device_type,
+            )
+            return False
+        if toggle is None:
+            toggle = self.state.auto_start is not True
+        payload_data = {'autoStartSwitch': int(toggle)}
+        r_dict = await self.call_bypassv2_api('setAutoStart', payload_data)
+        r = process_bypassv2_response(self, logger, 'toggle_auto_start', r_dict)
+        if r is None:
+            return False
+        self.state.auto_start = toggle
+        self.state.connection_status = ConnectionStatus.ONLINE
+        return True
+
+    async def toggle_pump(self, toggle: bool | None = None) -> bool:
+        """Toggle pump on/off."""
+        if not self.supports_pump:
+            logger.warning(
+                '%s is a %s does not have pump control or it is not supported.',
+                self.device_name,
+                self.device_type,
+            )
+            return False
+        if toggle is None:
+            toggle = self.state.pump_enabled is not True
+        payload_data = {'pumpEnable': int(toggle)}
+        r_dict = await self.call_bypassv2_api('setPumpSwitch', payload_data)
+        r = process_bypassv2_response(self, logger, 'toggle_pump', r_dict)
+        if r is None:
+            return False
+        self.state.pump_enabled = toggle
+        self.state.connection_status = ConnectionStatus.ONLINE
+        return True
+
+    async def set_drainage(self, mode: str) -> bool:
+        """Set drainage mode."""
+        if not self.supports_drainage:
+            logger.warning(
+                '%s is a %s does not have drainage control or it is not supported.',
+                self.device_name,
+                self.device_type,
+            )
+            return False
+        payload_data = {'drainageTypeConfig': mode}
+        r_dict = await self.call_bypassv2_api('setDrainage', payload_data)
+        r = process_bypassv2_response(self, logger, 'set_drainage', r_dict)
+        if r is None:
+            return False
+        self.state.drainage_mode = mode
         self.state.connection_status = ConnectionStatus.ONLINE
         return True
 
@@ -286,7 +456,7 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
             'id': self.state.timer.id,
         }
         r_dict = await self.call_bypassv2_api('delTimer', payload)
-        r = Helpers.process_dev_response(logger, 'clear_timer', self, r_dict)
+        r = process_bypassv2_response(self, logger, 'clear_timer', r_dict)
         if r is None:
             return False
         self.state.timer = None

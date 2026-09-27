@@ -1,3 +1,56 @@
+clear_timer:
+  headers:
+    Content-Type: application/json; charset=UTF-8
+    User-Agent: okhttp/3.12.1
+  json_object:
+    acceptLanguage: en
+    accountID: sample_id
+    appVersion: 5.6.60
+    cid: LDH-H251S-CID
+    configModel: ConfigModule
+    configModule: ConfigModule
+    debugMode: false
+    deviceId: LDH-H251S-CID
+    method: bypassV2
+    payload:
+      data:
+        id: 1
+      method: delTimer
+      source: APP
+    phoneBrand: pyvesync
+    phoneOS: Android
+    timeZone: America/New_York
+    token: sample_tk
+    traceId: TRACE_ID
+    userCountryCode: US
+  method: post
+  url: /cloud/v2/deviceManaged/bypassV2
+get_timer:
+  headers:
+    Content-Type: application/json; charset=UTF-8
+    User-Agent: okhttp/3.12.1
+  json_object:
+    acceptLanguage: en
+    accountID: sample_id
+    appVersion: 5.6.60
+    cid: LDH-H251S-CID
+    configModel: ConfigModule
+    configModule: ConfigModule
+    debugMode: false
+    deviceId: LDH-H251S-CID
+    method: bypassV2
+    payload:
+      data: {}
+      method: getTimer
+      source: APP
+    phoneBrand: pyvesync
+    phoneOS: Android
+    timeZone: America/New_York
+    token: sample_tk
+    traceId: TRACE_ID
+    userCountryCode: US
+  method: post
+  url: /cloud/v2/deviceManaged/bypassV2
 set_auto_mode:
   headers:
     Content-Type: application/json; charset=UTF-8
@@ -15,7 +68,34 @@ set_auto_mode:
     payload:
       data:
         workMode: auto
-      method: setHumidityMode
+      method: setWorkMode
+      source: APP
+    phoneBrand: pyvesync
+    phoneOS: Android
+    timeZone: America/New_York
+    token: sample_tk
+    traceId: TRACE_ID
+    userCountryCode: US
+  method: post
+  url: /cloud/v2/deviceManaged/bypassV2
+set_drainage:
+  headers:
+    Content-Type: application/json; charset=UTF-8
+    User-Agent: okhttp/3.12.1
+  json_object:
+    acceptLanguage: en
+    accountID: sample_id
+    appVersion: 5.6.60
+    cid: LDH-H251S-CID
+    configModel: ConfigModule
+    configModule: ConfigModule
+    debugMode: false
+    deviceId: LDH-H251S-CID
+    method: bypassV2
+    payload:
+      data:
+        drainageTypeConfig: pump
+      method: setDrainage
       source: APP
     phoneBrand: pyvesync
     phoneOS: Android
@@ -98,7 +178,62 @@ set_manual_mode:
     payload:
       data:
         workMode: manual
-      method: setHumidityMode
+      method: setWorkMode
+      source: APP
+    phoneBrand: pyvesync
+    phoneOS: Android
+    timeZone: America/New_York
+    token: sample_tk
+    traceId: TRACE_ID
+    userCountryCode: US
+  method: post
+  url: /cloud/v2/deviceManaged/bypassV2
+set_timer:
+  headers:
+    Content-Type: application/json; charset=UTF-8
+    User-Agent: okhttp/3.12.1
+  json_object:
+    acceptLanguage: en
+    accountID: sample_id
+    appVersion: 5.6.60
+    cid: LDH-H251S-CID
+    configModel: ConfigModule
+    configModule: ConfigModule
+    debugMode: false
+    deviceId: LDH-H251S-CID
+    method: bypassV2
+    payload:
+      data:
+        action: 'off'
+        total: 300
+      method: addTimer
+      source: APP
+    phoneBrand: pyvesync
+    phoneOS: Android
+    timeZone: America/New_York
+    token: sample_tk
+    traceId: TRACE_ID
+    userCountryCode: US
+  method: post
+  url: /cloud/v2/deviceManaged/bypassV2
+set_turbo_mode:
+  headers:
+    Content-Type: application/json; charset=UTF-8
+    User-Agent: okhttp/3.12.1
+  json_object:
+    acceptLanguage: en
+    accountID: sample_id
+    appVersion: 5.6.60
+    cid: LDH-H251S-CID
+    configModel: ConfigModule
+    configModule: ConfigModule
+    debugMode: false
+    deviceId: LDH-H251S-CID
+    method: bypassV2
+    payload:
+      data:
+        workMode: turbo
+      method: setWorkMode
       source: APP
     phoneBrand: pyvesync
     phoneOS: Android
@@ -127,6 +262,33 @@ turn_off:
         powerSwitch: 0
         switchIdx: 0
       method: setSwitch
+      source: APP
+    phoneBrand: pyvesync
+    phoneOS: Android
+    timeZone: America/New_York
+    token: sample_tk
+    traceId: TRACE_ID
+    userCountryCode: US
+  method: post
+  url: /cloud/v2/deviceManaged/bypassV2
+turn_off_auto_start:
+  headers:
+    Content-Type: application/json; charset=UTF-8
+    User-Agent: okhttp/3.12.1
+  json_object:
+    acceptLanguage: en
+    accountID: sample_id
+    appVersion: 5.6.60
+    cid: LDH-H251S-CID
+    configModel: ConfigModule
+    configModule: ConfigModule
+    debugMode: false
+    deviceId: LDH-H251S-CID
+    method: bypassV2
+    payload:
+      data:
+        autoStartSwitch: 0
+      method: setAutoStart
       source: APP
     phoneBrand: pyvesync
     phoneOS: Android
@@ -217,6 +379,87 @@ turn_off_display:
     userCountryCode: US
   method: post
   url: /cloud/v2/deviceManaged/bypassV2
+turn_off_mute:
+  headers:
+    Content-Type: application/json; charset=UTF-8
+    User-Agent: okhttp/3.12.1
+  json_object:
+    acceptLanguage: en
+    accountID: sample_id
+    appVersion: 5.6.60
+    cid: LDH-H251S-CID
+    configModel: ConfigModule
+    configModule: ConfigModule
+    debugMode: false
+    deviceId: LDH-H251S-CID
+    method: bypassV2
+    payload:
+      data:
+        muteSwitch: 0
+      method: setMuteSwitch
+      source: APP
+    phoneBrand: pyvesync
+    phoneOS: Android
+    timeZone: America/New_York
+    token: sample_tk
+    traceId: TRACE_ID
+    userCountryCode: US
+  method: post
+  url: /cloud/v2/deviceManaged/bypassV2
+turn_off_power_saving:
+  headers:
+    Content-Type: application/json; charset=UTF-8
+    User-Agent: okhttp/3.12.1
+  json_object:
+    acceptLanguage: en
+    accountID: sample_id
+    appVersion: 5.6.60
+    cid: LDH-H251S-CID
+    configModel: ConfigModule
+    configModule: ConfigModule
+    debugMode: false
+    deviceId: LDH-H251S-CID
+    method: bypassV2
+    payload:
+      data:
+        powerSavingSwitch: 0
+      method: setPowerSavingSwitch
+      source: APP
+    phoneBrand: pyvesync
+    phoneOS: Android
+    timeZone: America/New_York
+    token: sample_tk
+    traceId: TRACE_ID
+    userCountryCode: US
+  method: post
+  url: /cloud/v2/deviceManaged/bypassV2
+turn_off_pump:
+  headers:
+    Content-Type: application/json; charset=UTF-8
+    User-Agent: okhttp/3.12.1
+  json_object:
+    acceptLanguage: en
+    accountID: sample_id
+    appVersion: 5.6.60
+    cid: LDH-H251S-CID
+    configModel: ConfigModule
+    configModule: ConfigModule
+    debugMode: false
+    deviceId: LDH-H251S-CID
+    method: bypassV2
+    payload:
+      data:
+        pumpEnable: 0
+      method: setPumpSwitch
+      source: APP
+    phoneBrand: pyvesync
+    phoneOS: Android
+    timeZone: America/New_York
+    token: sample_tk
+    traceId: TRACE_ID
+    userCountryCode: US
+  method: post
+  url: /cloud/v2/deviceManaged/bypassV2
 turn_on:
   headers:
     Content-Type: application/json; charset=UTF-8
@@ -236,6 +479,33 @@ turn_on:
         powerSwitch: 1
         switchIdx: 0
       method: setSwitch
+      source: APP
+    phoneBrand: pyvesync
+    phoneOS: Android
+    timeZone: America/New_York
+    token: sample_tk
+    traceId: TRACE_ID
+    userCountryCode: US
+  method: post
+  url: /cloud/v2/deviceManaged/bypassV2
+turn_on_auto_start:
+  headers:
+    Content-Type: application/json; charset=UTF-8
+    User-Agent: okhttp/3.12.1
+  json_object:
+    acceptLanguage: en
+    accountID: sample_id
+    appVersion: 5.6.60
+    cid: LDH-H251S-CID
+    configModel: ConfigModule
+    configModule: ConfigModule
+    debugMode: false
+    deviceId: LDH-H251S-CID
+    method: bypassV2
+    payload:
+      data:
+        autoStartSwitch: 1
+      method: setAutoStart
       source: APP
     phoneBrand: pyvesync
     phoneOS: Android
@@ -326,6 +596,87 @@ turn_on_display:
     userCountryCode: US
   method: post
   url: /cloud/v2/deviceManaged/bypassV2
+turn_on_mute:
+  headers:
+    Content-Type: application/json; charset=UTF-8
+    User-Agent: okhttp/3.12.1
+  json_object:
+    acceptLanguage: en
+    accountID: sample_id
+    appVersion: 5.6.60
+    cid: LDH-H251S-CID
+    configModel: ConfigModule
+    configModule: ConfigModule
+    debugMode: false
+    deviceId: LDH-H251S-CID
+    method: bypassV2
+    payload:
+      data:
+        muteSwitch: 1
+      method: setMuteSwitch
+      source: APP
+    phoneBrand: pyvesync
+    phoneOS: Android
+    timeZone: America/New_York
+    token: sample_tk
+    traceId: TRACE_ID
+    userCountryCode: US
+  method: post
+  url: /cloud/v2/deviceManaged/bypassV2
+turn_on_power_saving:
+  headers:
+    Content-Type: application/json; charset=UTF-8
+    User-Agent: okhttp/3.12.1
+  json_object:
+    acceptLanguage: en
+    accountID: sample_id
+    appVersion: 5.6.60
+    cid: LDH-H251S-CID
+    configModel: ConfigModule
+    configModule: ConfigModule
+    debugMode: false
+    deviceId: LDH-H251S-CID
+    method: bypassV2
+    payload:
+      data:
+        powerSavingSwitch: 1
+      method: setPowerSavingSwitch
+      source: APP
+    phoneBrand: pyvesync
+    phoneOS: Android
+    timeZone: America/New_York
+    token: sample_tk
+    traceId: TRACE_ID
+    userCountryCode: US
+  method: post
+  url: /cloud/v2/deviceManaged/bypassV2
+turn_on_pump:
+  headers:
+    Content-Type: application/json; charset=UTF-8
+    User-Agent: okhttp/3.12.1
+  json_object:
+    acceptLanguage: en
+    accountID: sample_id
+    appVersion: 5.6.60
+    cid: LDH-H251S-CID
+    configModel: ConfigModule
+    configModule: ConfigModule
+    debugMode: false
+    deviceId: LDH-H251S-CID
+    method: bypassV2
+    payload:
+      data:
+        pumpEnable: 1
+      method: setPumpSwitch
+      source: APP
+    phoneBrand: pyvesync
+    phoneOS: Android
+    timeZone: America/New_York
+    token: sample_tk
+    traceId: TRACE_ID
+    userCountryCode: US
+  method: post
+  url: /cloud/v2/deviceManaged/bypassV2
 update:
   headers:
     Content-Type: application/json; charset=UTF-8
@@ -342,7 +693,7 @@ update:
     method: bypassV2
     payload:
       data: {}
-      method: getHumidifierStatus
+      method: getDeHumidifierStatus
       source: APP
     phoneBrand: pyvesync
     phoneOS: Android

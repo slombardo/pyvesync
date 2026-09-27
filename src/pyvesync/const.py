@@ -674,6 +674,11 @@ class DehumidifierFeatures(Features):
         AUTO_STOP: Auto stop when the water tank is full.
         DISPLAY: Display on/off status.
         WATER_TANK_FULL: Water tank full status.
+        MUTE: Mute status.
+        POWER_SAVING: Power saving status.
+        AUTO_START: Auto-start status.
+        PUMP: Pump status.
+        DRAINAGE: Drainage mode control.
     """
 
     ONOFF = 'onoff'
@@ -681,6 +686,11 @@ class DehumidifierFeatures(Features):
     AUTO_STOP = 'auto_stop'
     DISPLAY = 'display'
     WATER_TANK_FULL = 'water_tank_full'
+    MUTE = 'mute'
+    POWER_SAVING = 'power_saving'
+    AUTO_START = 'auto_start'
+    PUMP = 'pump'
+    DRAINAGE = 'drainage'
 
 
 class DehumidifierModes(Features):
@@ -689,10 +699,12 @@ class DehumidifierModes(Features):
     Attributes:
         AUTO: Auto mode.
         MANUAL: Manual mode.
+        TURBO: Turbo mode.
     """
 
     AUTO = 'auto'
     MANUAL = 'manual'
+    TURBO = 'turbo'
 
 
 class FanModes(StrEnum):
