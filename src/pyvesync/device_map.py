@@ -853,7 +853,7 @@ objects for humidifier devices."""
 dehumidifier_modules: list[DehumidifierMap] = [
     DehumidifierMap(
         class_name='VeSyncDehumidifier',
-        dev_types=['LV-HD350'],
+        dev_types=['LDH-H251S-WUS'],
         features=[
             DehumidifierFeatures.CHILD_LOCK,
             DehumidifierFeatures.AUTO_STOP,
@@ -866,10 +866,10 @@ dehumidifier_modules: list[DehumidifierMap] = [
         },
         fan_levels=list(range(1, 4)),
         target_minmax=(30, 80),
-        device_alias='Dehumidifier 30 Pint',
-        model_display='LV-HD350 Series',
-        model_name='Dehumidifier 30 Pint',
-        setup_entry='LV-HD350',
+        device_alias='Smart Dehumidifier 25 Pint',
+        model_display='LDH-H251S Series',
+        model_name='Smart Dehumidifier 25 Pint',
+        setup_entry='LDH-H251S',
     ),
 ]
 """List of ['DehumidifierMap'][pyvesync.device_map.DehumidifierMap] configuration
