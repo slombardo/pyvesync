@@ -666,6 +666,12 @@ class ErrorCodes:
             '-11003000': ResponseInfo(
                 'REQUEST_HIGH', ErrorTypes.RATE_LIMIT, 'Rate limiting error'
             ),
+            '11003000': ResponseInfo(
+                'BYPASS_PARAMETER_INVALID',
+                ErrorTypes.REQUEST_ERROR,
+                'Invalid device parameter',
+                device_online=True,
+            ),
             '-11005000': ResponseInfo(
                 'RESOURCE_NOT_EXIST',
                 ErrorTypes.REQUEST_ERROR,

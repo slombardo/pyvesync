@@ -18,6 +18,7 @@ from pyvesync.models.bypass_models import (
     RequestBypassV1,
     RequestBypassV2,
 )
+from pyvesync.utils.errors import ErrorTypes, ResponseInfo
 from pyvesync.utils.helpers import Helpers
 from pyvesync.utils.logs import LibraryLogger
 
@@ -60,16 +61,15 @@ def process_bypassv1_result(
     return Helpers.model_maker(logger, model, method, result, device)
 
 
-def _get_inner_result(
+def _get_bypassv2_result(
     device: VeSyncBaseDevice,
     logger: Logger,
     method: str,
     resp_dict: dict,
-) -> dict | None:
+) -> tuple[int | None, dict | None]:
     """Process the code in the result field of Bypass V2."""
     try:
         outer_result = resp_dict['result']
-        inner_result = outer_result['result']
         code = int(outer_result['code'])
     except (ValueError, TypeError, KeyError):
         LibraryLogger.error_device_response_content(
@@ -78,11 +78,41 @@ def _get_inner_result(
             method,
             'Error processing bypass V2 API response result.',
         )
-        return None
+        return None, None
 
     if code != 0:
+        return code, None
+    inner_result = outer_result.get('result')
+    if inner_result is None:
+        return code, {}
+    if not isinstance(inner_result, dict):
+        LibraryLogger.error_device_response_content(
+            logger,
+            device,
+            method,
+            'Error processing bypass V2 API response result.',
+        )
+        device.last_response = ResponseInfo(
+            name='INVALID_RESPONSE',
+            error_type=ErrorTypes.BAD_RESPONSE,
+            message=f'Malformed bypass V2 response from API for {method}',
+        )
+        return code, None
+    return code, inner_result
+
+
+def process_bypassv2_response(
+    device: VeSyncBaseDevice,
+    logger: Logger,
+    method: str,
+    resp_dict: dict | None,
+) -> dict | None:
+    """Process a Bypass V2 API response for setter-style methods."""
+    r_dict = Helpers.process_dev_response(logger, method, device, resp_dict)
+    if r_dict is None:
         return None
-    return inner_result
+    _code, result = _get_bypassv2_result(device, logger, method, r_dict)
+    return result
 
 
 def process_bypassv2_result(
@@ -111,7 +141,7 @@ def process_bypassv2_result(
     r_dict = Helpers.process_dev_response(logger, method, device, resp_dict)
     if r_dict is None:
         return None
-    result = _get_inner_result(device, logger, method, r_dict)
+    _code, result = _get_bypassv2_result(device, logger, method, r_dict)
     if not isinstance(result, dict):
         return None
     return Helpers.model_maker(logger, model, method, result, device)

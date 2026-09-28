@@ -1,5 +1,13 @@
 # Data Model: VeSync Dehumidifier Support
 
+> **Post-implementation revision**: This document describes entities in terms of the
+> original `HumidifierMap`/`VeSyncHumidifier` design. Based on maintainer feedback
+> that a dehumidifier should not be grouped under `manager.devices.humidifiers`, the
+> implementation was refactored into an independent `Dehumidifier` product family:
+> `HumidifierMap` below corresponds to `DehumidifierMap`, and `VeSyncHumidifier`
+> corresponds to `VeSyncDehumidifierBase`/`VeSyncDehumidifier`. See `tasks.md` for
+> the list of affected files.
+
 ## Core Entities
 
 ### HumidifierMap

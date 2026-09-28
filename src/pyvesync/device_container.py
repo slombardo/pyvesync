@@ -26,6 +26,7 @@ from pyvesync.device_map import get_device_config
 if TYPE_CHECKING:
     from pyvesync import VeSync
     from pyvesync.base_devices.bulb_base import VeSyncBulb
+    from pyvesync.base_devices.dehumidifier_base import VeSyncDehumidifierBase
     from pyvesync.base_devices.fan_base import VeSyncFanBase
     from pyvesync.base_devices.fryer_base import VeSyncFryer
     from pyvesync.base_devices.humidifier_base import VeSyncHumidifier
@@ -339,6 +340,15 @@ class DeviceContainer(_DeviceContainerBase):
             cast('VeSyncHumidifier', device)
             for device in self
             if device.product_type == ProductTypes.HUMIDIFIER
+        ]
+
+    @property
+    def dehumidifiers(self) -> list[VeSyncDehumidifierBase]:
+        """Return a list of devices that are dehumidifiers."""
+        return [
+            cast('VeSyncDehumidifierBase', device)
+            for device in self
+            if device.product_type == ProductTypes.DEHUMIDIFIER
         ]
 
     @property
