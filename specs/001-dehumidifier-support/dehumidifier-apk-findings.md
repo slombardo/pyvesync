@@ -1,6 +1,6 @@
 # Dehumidifier APK Findings
 
-Analysis performed against `C:\temp\vesync-src\sources` (jadx-decompiled, obfuscated Java from a jadx run recorded in `C:\temp\decompile.ps1`; original APK at `C:\tmp\vesync.apk`, not touched/modified in this session). Read-only source inspection only; no network calls made.
+Analysis is based on the user's read-only jadx APK decompilation artifacts under `C:\temp\vesync-src\sources` (jadx run recorded in `C:\temp\decompile.ps1`; original APK at `C:\tmp\vesync.apk`, not touched/modified in this session). Read-only source inspection only; no network calls made.
 
 ## Where the logic lives
 
@@ -104,9 +104,9 @@ No code path was found that ties `autoStartSwitch` to `reachTargetState` or `tan
 
 ## Q3. Target humidity range
 
-**Answer:** **35–70%, hard-coded client-side**, default target 55%, step 1 (whole percent). A separate, narrower **recommended band of 40–60%** is shown as a visual hint inside the same slider (not a hard limit).
+**Answer:** **35–70%, hard-coded client-side**. A separate, narrower **recommended band of 40–60%** is shown as a visual hint inside the same slider (not a hard limit). The UI appears to operate in whole percentages (likely 1% increments).
 
-**Confidence:** High for the 35–70 selectable range and the 40–60 recommended band (both found hard-coded in two independent places); Medium on "step = 1" (inferred from the seek-bar being an integer-percent control with no explicit step parameter found).
+**Confidence:** High for the 35–70 selectable range and the 40–60 recommended band (both found hard-coded in two independent places); Medium on "step = 1" (inferred from the seek-bar being an integer-percent control with no explicit step parameter found). Medium on default target behavior due to conflicting defaults in different APK model layers.
 
 **Evidence:**
 1. UI slider bounds, `C:\temp\vesync-src\sources\com\dehumidifier\view\DhTargetHumidityView.java:65-67`:
@@ -126,7 +126,10 @@ Recommended-band text at line ~140: `l1.c(com.vesync.resource.R.string.levoit_de
 ```
 No call site in `AirDeHumidifierMainViewModel` (`b0.java`, the file that builds this state from live device status) overrides `humidityOptionalRange`/`recommendHumidifier` with device-supplied values — grep for `IntRange(` in `b0.java` returns no matches — so the 35–70 bound is not read from a per-device/server config in the code paths reviewed; it is a constant for all dehumidifier devices in this app build.
 
-3. Status model default target humidity is 55, `C:\temp\vesync-src\sources\w81\w.java` (constructor comments / `toString`), consistent with `targetHumidity` default seen in the two view/viewmodel defaults above.
+3. Default target information in the APK is not fully consistent across layers:
+   - ViewModel state default when unset is 50 (`C:\temp\vesync-src\sources\com\vesync\kmp\air\dehumidifier\vm\dehumidifiermain\o.java:236`).
+   - Status model constructor default for `targetHumidity` is 55 (`C:\temp\vesync-src\sources\w81\w.java`, reflected in constructor defaults/`toString` path).
+   - Interpretation: both values are observed in code; which one is authoritative at runtime depends on when/where defaults are applied.
 
 **Special values below the minimum ("continuous"/CO mode):** NOT FOUND. No evidence of a special "continuous" sentinel value or below-minimum mode for target humidity in the dehumidifier code.
 
@@ -160,9 +163,9 @@ public final class AddTimer {
 - `AirDeHumidifierMainViewModel` (`b0.java`) has `handleClickTimerIntent`/`startTimer` methods, but their bodies (as decompiled) call into `AirTimerService`/local UI state, not a bypass or schedule API.
 - View-model state class `n.java` (`AirDHTimerState`) only carries a `reminderTime` field plus `showFunc`/`enableFunc` flags — consistent with a local reminder countdown, not a server-side schedule.
 
-**Conclusion (Medium-High confidence):** For this device, the "timer" UI most likely just displays/counts down the `timerRemain` value that the device itself reports in `getDeHumidifierStatus`, decremented locally between polls for a smooth UI (classic "client interpolates between polls" pattern), rather than the app creating a server-side timer via `addTimer`. **I could not find code that lets the app itself create/query/delete a timer for the dehumidifier** — this is an open item; it's possible that capability doesn't exist for this device, or is driven by the shared cross-device `com.vesync.schedule` module through a code path not reached by my searches (its generic nature makes it hard to prove a negative). Payload shape/allowed durations/allowed `action` values for a hypothetical dehumidifier `addTimer` call: **NOT FOUND**.
+**Conclusion (Medium-High confidence):** For this device, the "timer" UI most likely just displays/counts down the `timerRemain` value that the device itself reports in `getDeHumidifierStatus`, decremented locally between polls for a smooth UI (classic "client interpolates between polls" pattern), rather than the app creating a server-side timer via `addTimer`. **No dehumidifier-specific timer creation/query/deletion path was found in the APK**, but this is treated as unresolved rather than impossible; a shared cross-device `com.vesync.schedule` path could still exist outside the identified dehumidifier call graph. Payload shape/allowed durations/allowed `action` values for a hypothetical dehumidifier `addTimer` call: **NOT FOUND**.
 
-**`timerRemain` meaning/units:** Not explicitly documented in code, but by construction (paired with the local per-second countdown in `AirTimerService`) it behaves as **seconds remaining**. No explicit unit conversion/label was found to contradict this.
+**`timerRemain` meaning/units:** Not explicitly documented in code, but by construction (paired with the local per-second countdown in `AirTimerService`) it behaves as **seconds remaining** (inference). No explicit unit conversion/label was found to contradict this.
 
 **Turn on after timer (device off):** NOT FOUND — no evidence either way given no confirmed timer-creation call was located.
 
@@ -310,24 +313,41 @@ A **second, seemingly older/alternate** work-state-like enum was found at `C:\te
 
 ---
 
-## Complete method table
+## Complete dehumidifier bypass method inventory (authoritative)
 
-| UI control | API method | Payload JSON | Status field(s) | Notes |
+### Confirmed methods in dehumidifier bypass interface
+
+| UI/control area | API method | Payload JSON | Status field(s) | Notes |
 |---|---|---|---|---|
-| Get status | `getDeHumidifierStatus` | `{}` | (all) | Confirmed by you; response type `w81.w` |
-| Power on/off | `setSwitch` | `{"powerSwitch":0\|1,"switchIdx"?:int}` | `powerSwitch` | `switchIdx` optional/nullable field also exists in payload (`w81.x0`) |
-| Target humidity | `setTargetHumidity` | `{"targetHumidity":35-70}` | `targetHumidity` | Range hard-coded client-side, see Q3 |
-| Work mode | `setWorkMode` | `{"workMode":"auto"\|"turbo"\|"quiet"\|"manual"\|"ventilation"}` | `workMode` | See Q1 |
-| Fan/manual speed | `setLevel` **(new — not in your original list)** | `{"manualSpeedLevel":1\|2\|3}` | `manualSpeedLevel` | LOW=1,MEDIUM=2,HIGH=3 |
+| Get status | `getDeHumidifierStatus` | `{}` | (all) | Response model `w81.w` |
+| Power on/off | `setSwitch` | `{"powerSwitch":0\|1,"switchIdx"?:int}` | `powerSwitch` | `switchIdx` optional/nullable in `w81.x0` |
+| Target humidity | `setTargetHumidity` | `{"targetHumidity":35-70}` | `targetHumidity` | 35–70 hard-coded in APK UI/viewmodel |
+| Work mode | `setWorkMode` | `{"workMode":"auto"\|"turbo"\|"quiet"\|"manual"\|"ventilation"}` | `workMode` | Quiet is a distinct mode value |
+| Fan/manual speed | `setLevel` | `{"manualSpeedLevel":1\|2\|3}` | `manualSpeedLevel` | LOW=1, MEDIUM=2, HIGH=3 |
 | Child lock | `setChildLock` | `{"childLockSwitch":0\|1}` | `childLockSwitch` | |
 | Mute | `setMuteSwitch` | `{"muteSwitch":0\|1}` | `muteSwitch` | |
-| Power saving toggle | `setPowerSavingSwitch` | decompiled field is `{"enabled":0\|1}`; **your live capture showed `{"powerSavingSwitch":0\|1}`** | `powerSavingState`, `powerSavingTimeSec` | ⚠️ Field-name discrepancy, see Q4 |
-| Power-saving schedule | `getPowerSavingConfig` / `addPowerSavingSlot` / `updatePowerSavingSlot` / `deletePowerSavingSlot` **(new)** | `{"startMin":int,"endMin":int[,"id":int]}` | (n/a — separate schedule object) | Minute-of-day slots, see Q4 |
-| Auto-Start (resume after power loss) | `setAutoStart` | `{"autoStartSwitch":0\|1}` | `autoStartSwitch` | NOT "auto off"; see Q2 |
+| Auto-Start | `setAutoStart` | `{"autoStartSwitch":0\|1}` | `autoStartSwitch` | Resume after power restoration |
 | Water pump | `setPumpSwitch` | `{"pumpEnable":0\|1}` | `pumpEnable`, `pumpWorking`, `pumpInPlace` | |
 | Display/screen | `setDisplay` | `{"screenSwitch":0\|1}` | `screenSwitch`, `screenState` | |
-| Drainage type | `setDrainage` | `{"drainageType":"innerTank"\|"expansionTank"\|"pipe"\|"pump"}` | `drainageTypeConfig` | Write field name differs from read field name, see Q9 |
-| Timer | NOT FOUND (dehumidifier-specific) | — | `timerRemain`, `scheduleCount` | See Q4 |
+| Drainage type | `setDrainage` | `{"drainageType":"innerTank"\|"expansionTank"\|"pipe"\|"pump"}` | `drainageTypeConfig` | Write field is `drainageType`, read field is `drainageTypeConfig` |
+| Power saving toggle | `setPowerSavingSwitch` | APK model shows `{"enabled":0\|1}` | `powerSavingState`, `powerSavingTimeSec` | Live capture discrepancy: `{"powerSavingSwitch":0\|1}` also observed |
+
+### Newly discovered methods (not in the earlier minimal method list)
+
+| API method | Payload JSON | Notes |
+|---|---|---|
+| `setLevel` | `{"manualSpeedLevel":1\|2\|3}` | Dehumidifier fan level method is `setLevel` (not `setVirtualLevel`) |
+| `getPowerSavingConfig` | `{}` | Returns power-saving enable state + slot list |
+| `addPowerSavingSlot` | `{"startMin":int,"endMin":int[,"id":int]}` | `id` absent for add |
+| `updatePowerSavingSlot` | `{"startMin":int,"endMin":int,"id":int}` | Updates existing slot by id |
+| `deletePowerSavingSlot` | `{"id":int}` (inferred) | Method confirmed; request model `w81.x` not fully inspected |
+
+### Items not found in dehumidifier-specific APK call path
+
+| Not-found item | Status | Notes |
+|---|---|---|
+| `setAutoStopSwitch` / `autoStopSwitch` | Not found for dehumidifier package | Found only in humidifier package; should not be assumed for dehumidifier |
+| Dehumidifier `addTimer` / `getTimer` / `delTimer` bypass methods | Not found | Generic schedule timer API exists elsewhere, but no dehumidifier-specific call site found |
 
 ---
 
@@ -366,9 +386,10 @@ Fields present in this model but not in your listed live fields: `drainageType` 
 
 1. **`fanSpeedLevel` / `actualRunLevel` / `compressorState` / `coilTemp` / `exhaustPipeTemp` / top-level `tempInF`** — not present in the decompiled `AirDehumidifierStatus` model at all. Searched exhaustively (`grep` across entire `sources/` tree) — these look like newer API fields added after this APK build. Cannot determine scaling/meaning from this APK; recommend trusting your own live captures for these.
 2. **Concrete `errorCodes` → message/level table** — confirmed to be server/CMS-driven (image URLs, nullable tip/button text in the model), not embedded in the APK. Cannot be recovered by static analysis.
-3. **Timer add/get/delete for the dehumidifier specifically** — no dehumidifier bypass method found; a generic, unrelated `com.vesync.schedule` Timer API exists in the app but no call site tying it to the dehumidifier was located. `timerRemain`/`scheduleCount` semantics beyond "some seconds-remaining counter, decremented locally by `AirTimerService` between polls" could not be fully confirmed.
+3. **Timer add/get/delete for the dehumidifier specifically** — no dehumidifier bypass method found; a generic, unrelated `com.vesync.schedule` Timer API exists in the app but no call site tying it to the dehumidifier was located. `timerRemain`/`scheduleCount` semantics beyond "read-only countdown field (likely seconds), decremented locally by `AirTimerService` between polls" could not be fully confirmed.
 4. **`setPowerSavingSwitch` payload field name discrepancy** (`enabled` in decompiled code vs. `powerSavingSwitch` in your live capture) — flagged above; recommend trusting your live capture, but worth being aware the same endpoint name may accept different historical field names.
-5. **State-disabling rules (Q6)** — only partial evidence (fan level only meaningful in `manual`; a generic `setEnable(boolean)` on the humidity slider). Full state-machine (which controls disable when off/tank full/in which `workMode`) would require reading the very large `AirDeHumidifierMainViewModel` (`b0.java`, thousands of lines) end-to-end, which was only partially reviewed due to size.
-6. **`tankLevel` integer scale** and **`drainageTypeConfig` ↔ `pumpEnable`/`pumpInPlace` validation rules** — fields exist but no consuming/validating logic was located in the files reviewed (`SelectDrainageTypeActivity`/`SelectSetUpDrainageActivity` were not read in full).
-7. **Model identifiers (`LDH-...`, `configModule` values)** — no hard-coded model-code strings found anywhere in the dehumidifier package; the app appears to treat `configModule` as an opaque per-device string, not a client-side branch key, for all the behaviors covered here.
-8. **Response codes `-11302030` / `11003000`** — not found anywhere in the APK.
+5. **`powerSavingTimeSec` and `powerSavingState` semantics** — field presence is confirmed, but precise meanings/units/transitions were not recoverable from this APK.
+6. **State-disabling rules (Q6)** — only partial evidence (fan level only meaningful in `manual`; a generic `setEnable(boolean)` on the humidity slider). Full state-machine (which controls disable when off/tank full/in which `workMode`) would require reading the very large `AirDeHumidifierMainViewModel` (`b0.java`, thousands of lines) end-to-end, which was only partially reviewed due to size.
+7. **`tankLevel` integer scale** and **`drainageTypeConfig` ↔ `pumpEnable`/`pumpInPlace` validation rules** — fields exist but no consuming/validating logic was located in the files reviewed (`SelectDrainageTypeActivity`/`SelectSetUpDrainageActivity` were not read in full).
+8. **Model identifiers (`LDH-...`, `configModule` values)** — no hard-coded model-code strings found anywhere in the dehumidifier package; the app appears to treat `configModule` as an opaque per-device string, not a client-side branch key, for all the behaviors covered here.
+9. **Response codes `-11302030` / `11003000`** — not found anywhere in the APK.
