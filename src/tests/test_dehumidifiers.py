@@ -31,7 +31,6 @@ import call_json_dehumidifiers
 import pyvesync.const as const
 from base_test_cases import TestBase
 from pyvesync.base_devices.dehumidifier_base import VeSyncDehumidifierBase
-from pyvesync.utils.helpers import Timer
 from utils import assert_test, parse_args
 
 
@@ -84,10 +83,9 @@ class TestDehumidifiers(TestBase):
         ["turn_off"],
         ["turn_on_display"],
         ["turn_off_display"],
-        ["turn_on_automatic_stop"],
-        ["turn_off_automatic_stop"],
         ["set_humidity", {"humidity": 50}],
         ["set_auto_mode"],
+        ["set_quiet_mode"],
         ["set_manual_mode"],
         ["set_turbo_mode"],
         ["set_fan_speed", {"level": 2}],
@@ -103,8 +101,6 @@ class TestDehumidifiers(TestBase):
         ["turn_off_pump"],
         ["set_drainage", {"mode": "pump"}],
         ["get_timer"],
-        ["set_timer", {"duration": 300}],
-        ["clear_timer"],
     ]
     device_methods: dict = {}
 
@@ -158,6 +154,11 @@ class TestDehumidifiers(TestBase):
         assert dehumid_obj.state.drainage_mode == call_json_dehumidifiers.DehumidifierDefaults.drainage_type
         assert dehumid_obj.state.pump_enabled == call_json_dehumidifiers.DehumidifierDefaults.pump_enable
         assert dehumid_obj.state.temperature == call_json_dehumidifiers.DehumidifierDefaults.temperature
+        assert dehumid_obj.state.timer is not None
+        assert (
+            dehumid_obj.state.timer.time_remaining
+            <= call_json_dehumidifiers.DehumidifierDefaults.timer_remain
+        )
 
         # Parse mock_api args tuple from arg, kwargs to kwargs
         all_kwargs = parse_args(self.mock_api)
@@ -209,12 +210,14 @@ class TestDehumidifiers(TestBase):
             dehumid_obj.state.device_status = const.DeviceStatus.ON
         elif method[0] == "set_auto_mode":
             dehumid_obj.state.mode = const.DehumidifierModes.MANUAL
+        elif method[0] == "set_quiet_mode":
+            dehumid_obj.state.mode = const.DehumidifierModes.AUTO
         elif method[0] == "set_manual_mode":
             dehumid_obj.state.mode = const.DehumidifierModes.AUTO
         elif method[0] == "set_turbo_mode":
             dehumid_obj.state.mode = const.DehumidifierModes.AUTO
-        elif method[0] == "clear_timer":
-            dehumid_obj.state.timer = Timer(300, const.DeviceStatus.OFF, id=1)
+        elif method[0] == "set_fan_speed":
+            dehumid_obj.state.mode = const.DehumidifierModes.MANUAL
         elif method[0] == "turn_on_mute":
             dehumid_obj.state.mute_status = const.DeviceStatus.OFF
         elif method[0] == "turn_off_mute":
@@ -239,6 +242,8 @@ class TestDehumidifiers(TestBase):
 
         if method[0] == "set_auto_mode":
             assert dehumid_obj.state.mode == const.DehumidifierModes.AUTO
+        elif method[0] == "set_quiet_mode":
+            assert dehumid_obj.state.mode == const.DehumidifierModes.QUIET
         elif method[0] == "set_manual_mode":
             assert dehumid_obj.state.mode == const.DehumidifierModes.MANUAL
         elif method[0] == "set_turbo_mode":
@@ -247,10 +252,6 @@ class TestDehumidifiers(TestBase):
             assert dehumid_obj.state.target_humidity == method_kwargs["humidity"]
         elif method[0] == "set_fan_speed":
             assert dehumid_obj.state.fan_speed == method_kwargs["level"]
-        elif method[0] == "turn_on_automatic_stop":
-            assert dehumid_obj.state.automatic_stop_config is True
-        elif method[0] == "turn_off_automatic_stop":
-            assert dehumid_obj.state.automatic_stop_config is False
         elif method[0] == "turn_on_child_lock":
             assert dehumid_obj.state.child_lock is True
         elif method[0] == "turn_off_child_lock":
@@ -275,14 +276,10 @@ class TestDehumidifiers(TestBase):
             assert dehumid_obj.state.drainage_mode == method_kwargs["mode"]
         elif method[0] == "get_timer":
             assert dehumid_obj.state.timer is not None
-            assert dehumid_obj.state.timer.id == 1
-            assert dehumid_obj.state.timer.action == "off"
-        elif method[0] == "set_timer":
-            assert dehumid_obj.state.timer is not None
-            assert dehumid_obj.state.timer.id == 1
-            assert dehumid_obj.state.timer.timer_duration == method_kwargs["duration"]
-        elif method[0] == "clear_timer":
-            assert dehumid_obj.state.timer is None
+            assert (
+                dehumid_obj.state.timer.time_remaining
+                <= call_json_dehumidifiers.DehumidifierDefaults.timer_remain
+            )
 
         all_kwargs = parse_args(self.mock_api)
 
@@ -319,3 +316,43 @@ class TestDehumidifiers(TestBase):
 
         assert result is False
         assert dehumid_obj.last_response.code == -11302030
+
+    def test_humidity_range_validation(self):
+        """Test target humidity is constrained to the verified 35-70% range."""
+        dehumid_obj = self.get_device("dehumidifiers", "LDH-H251S")
+        assert isinstance(dehumid_obj, VeSyncDehumidifierBase)
+
+        assert self.run_in_loop(dehumid_obj.set_humidity, humidity=34) is False
+        assert self.run_in_loop(dehumid_obj.set_humidity, humidity=71) is False
+        self.mock_api.assert_not_called()
+
+    def test_fan_speed_requires_manual_mode(self):
+        """Test manual fan speed changes are rejected outside manual mode."""
+        dehumid_obj = self.get_device("dehumidifiers", "LDH-H251S")
+        assert isinstance(dehumid_obj, VeSyncDehumidifierBase)
+        dehumid_obj.state.mode = const.DehumidifierModes.TURBO
+
+        result = self.run_in_loop(dehumid_obj.set_fan_speed, level=2)
+
+        assert result is False
+        self.mock_api.assert_not_called()
+
+    def test_timer_set_not_supported(self):
+        """Test dehumidifier timer creation is not advertised without verified API."""
+        dehumid_obj = self.get_device("dehumidifiers", "LDH-H251S")
+        assert isinstance(dehumid_obj, VeSyncDehumidifierBase)
+
+        result = self.run_in_loop(dehumid_obj.set_timer, duration=300)
+
+        assert result is False
+        self.mock_api.assert_not_called()
+
+    def test_timer_clear_not_supported(self):
+        """Test dehumidifier timer clearing is not advertised without verified API."""
+        dehumid_obj = self.get_device("dehumidifiers", "LDH-H251S")
+        assert isinstance(dehumid_obj, VeSyncDehumidifierBase)
+
+        result = self.run_in_loop(dehumid_obj.clear_timer)
+
+        assert result is False
+        self.mock_api.assert_not_called()

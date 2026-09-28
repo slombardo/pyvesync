@@ -50,10 +50,5 @@ class DehumidifierResult(BypassV2InnerResult):
     coilTemp: int | None = None
     exhaustPipeTemp: int | None = None
     actualRunLevel: int | None = None
-    autoStopSwitch: int | None = None
-    autoStopState: int | None = None
     waterTankFull: int | None = None
     temperature: int | None = None
-    virtualLevel: int | None = None
-    mistLevel: int | None = None
-    errorCode: int | None = None

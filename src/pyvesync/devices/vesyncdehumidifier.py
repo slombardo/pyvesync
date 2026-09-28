@@ -8,9 +8,8 @@ from typing import TYPE_CHECKING
 import orjson
 
 from pyvesync.base_devices.dehumidifier_base import VeSyncDehumidifierBase
-from pyvesync.const import ConnectionStatus, DeviceStatus
+from pyvesync.const import ConnectionStatus, DehumidifierModes, DeviceStatus
 from pyvesync.models import dehumidifier_models as models
-from pyvesync.models.bypass_models import ResultV2GetTimer, ResultV2SetTimer
 from pyvesync.utils.device_mixins import (
     BypassV2Mixin,
     process_bypassv2_response,
@@ -31,7 +30,7 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
     """VeSync Dehumidifier Class.
 
     Uses the Bypass V2 command family to read and write humidity, fan speed,
-    mode, power, display, child lock, automatic stop and water tank status.
+    mode, power, display, child lock, and supported advanced status/control paths.
 
     Args:
         details (ResponseDeviceDetailsModel): The device details.
@@ -92,8 +91,6 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
             bool(resp_model.tankInPlace) if resp_model.tankInPlace is not None else None
         )
         self.state.water_tank_full = bool(resp_model.waterTankFull)
-        self.state.automatic_stop_config = bool(resp_model.autoStopSwitch)
-        self.state.auto_stop_target_reached = bool(resp_model.autoStopState)
         self.state.display_set_status = DeviceStatus.from_int(resp_model.screenSwitch)
         self.state.display_status = DeviceStatus.from_int(resp_model.screenState)
         self.state.schedule_count = resp_model.scheduleCount
@@ -193,29 +190,6 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
         self.state.connection_status = ConnectionStatus.ONLINE
         return True
 
-    async def toggle_automatic_stop(self, toggle: bool | None = None) -> bool:
-        """Toggle automatic stop when the water tank is full."""
-        if not self.supports_automatic_stop:
-            logger.warning(
-                '%s is a %s does not have automatic stop or it is not supported.',
-                self.device_name,
-                self.device_type,
-            )
-            return False
-
-        if toggle is None:
-            toggle = self.state.automatic_stop_config is not True
-
-        payload_data = {'autoStopSwitch': int(toggle)}
-        r_dict = await self.call_bypassv2_api('setAutoStopSwitch', payload_data)
-        r = process_bypassv2_response(self, logger, 'toggle_automatic_stop', r_dict)
-        if r is None:
-            return False
-
-        self.state.automatic_stop_config = toggle
-        self.state.connection_status = ConnectionStatus.ONLINE
-        return True
-
     async def toggle_display(self, toggle: bool | None = None) -> bool:
         """Toggle the display on/off."""
         if not self.supports_display:
@@ -290,13 +264,21 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
             )
             return False
 
-        payload_data = {'levelIdx': 0, 'virtualLevel': level, 'levelType': 'mist'}
-        r_dict = await self.call_bypassv2_api('setVirtualLevel', payload_data)
+        if self.state.mode != DehumidifierModes.MANUAL:
+            logger.warning(
+                'Dehumidifier fan speed can only be changed while in manual mode.'
+            )
+            return False
+
+        payload_data = {'manualSpeedLevel': level}
+        r_dict = await self.call_bypassv2_api('setLevel', payload_data)
         r = process_bypassv2_response(self, logger, 'set_fan_speed', r_dict)
         if r is None:
             return False
 
+        self.state.mode = DehumidifierModes.MANUAL
         self.state.fan_speed = level
+        self.state.manual_fan_speed = level
         self.state.fan_virtual_speed = level
         self.state.connection_status = ConnectionStatus.ONLINE
         return True
@@ -429,57 +411,6 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
         return True
 
     async def get_timer(self) -> Timer | None:
-        """Get active dehumidifier timer, if any."""
-        r_dict = await self.call_bypassv2_api('getTimer')
-        result_model = process_bypassv2_result(
-            self, logger, 'get_timer', r_dict, ResultV2GetTimer
-        )
-        if result_model is None:
-            return None
-        if not result_model.timers:
-            logger.debug('No timers found')
-            return None
-        timer = result_model.timers[0]
-        self.state.timer = Timer(
-            timer_duration=timer.total,
-            action=timer.action,
-            id=timer.id,
-        )
+        """Get the timer state reported by the dehumidifier status payload."""
+        await self.get_details()
         return self.state.timer
-
-    async def clear_timer(self) -> bool:
-        """Clear the active dehumidifier timer."""
-        if self.state.timer is None:
-            logger.debug('No timer to clear, run get_timer() first.')
-            return False
-        payload = {
-            'id': self.state.timer.id,
-        }
-        r_dict = await self.call_bypassv2_api('delTimer', payload)
-        r = process_bypassv2_response(self, logger, 'clear_timer', r_dict)
-        if r is None:
-            return False
-        self.state.timer = None
-        return True
-
-    async def set_timer(self, duration: int, action: str | None = None) -> bool:
-        """Set a dehumidifier timer for the given duration in seconds."""
-        if action is None:
-            action = (
-                DeviceStatus.OFF
-                if self.state.device_status == DeviceStatus.ON
-                else DeviceStatus.ON
-            )
-        payload_data = {
-            'action': str(action),
-            'total': duration,
-        }
-        r_dict = await self.call_bypassv2_api('addTimer', payload_data)
-        r = process_bypassv2_result(self, logger, 'set_timer', r_dict, ResultV2SetTimer)
-        if r is None:
-            return False
-
-        self.state.timer = Timer(
-            timer_duration=duration, action=action, id=r.id, remaining=0
-        )
-        return True

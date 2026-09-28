@@ -698,13 +698,17 @@ class DehumidifierModes(Features):
 
     Attributes:
         AUTO: Auto mode.
+        QUIET: Quiet mode.
         MANUAL: Manual mode.
         TURBO: Turbo mode.
+        VENTILATION: Ventilation mode.
     """
 
     AUTO = 'auto'
+    QUIET = 'quiet'
     MANUAL = 'manual'
     TURBO = 'turbo'
+    VENTILATION = 'ventilation'
 
 
 class FanModes(StrEnum):

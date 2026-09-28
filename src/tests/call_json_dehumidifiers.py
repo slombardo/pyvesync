@@ -86,6 +86,8 @@ class DehumidifierDefaults:
     coil_temp = 5
     exhaust_pipe_temp = 55
     actual_run_level = 3
+    timer_remain = 120
+    schedule_count = 1
 
 
 DEHUMIDIFIER_DETAILS = {
@@ -102,8 +104,8 @@ DEHUMIDIFIER_DETAILS = {
         "tankInPlace": int(DehumidifierDefaults.tank_in_place),
         "screenSwitch": int(DehumidifierDefaults.display_config),
         "screenState": int(DehumidifierDefaults.display),
-        "scheduleCount": 0,
-        "timerRemain": 0,
+        "scheduleCount": DehumidifierDefaults.schedule_count,
+        "timerRemain": DehumidifierDefaults.timer_remain,
         "autoStartSwitch": int(DehumidifierDefaults.auto_start),
         "errorCodes": DehumidifierDefaults.error_codes,
         "filterLifePercent": DehumidifierDefaults.filter_life_percent,
@@ -159,15 +161,4 @@ for key in METHOD_RESPONSES:
     METHOD_RESPONSES[key]["turn_on_pump"] = build_setter_success_without_result
     METHOD_RESPONSES[key]["turn_off_pump"] = build_setter_success_without_result
     METHOD_RESPONSES[key]["set_drainage"] = build_setter_success_without_result
-    METHOD_RESPONSES[key]["get_timer"] = build_bypass_v2_response(
-        code=0,
-        msg="request success",
-        inner_result={
-            "timers": [{"id": 1, "remain": 120, "action": "off", "total": 300}]
-        },
-    )
-    METHOD_RESPONSES[key]["set_timer"] = build_bypass_v2_response(
-        code=0,
-        msg="request success",
-        inner_result={"id": 1},
-    )
+    METHOD_RESPONSES[key]["get_timer"] = DETAILS_RESPONSES[key]

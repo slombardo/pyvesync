@@ -23,9 +23,7 @@ class DehumidifierState(DeviceState):
 
     Attributes:
         actual_run_level (int): Actual run level.
-        auto_stop_target_reached (bool): Automatic stop target reached.
         auto_start (bool): Auto-start status.
-        automatic_stop_config (bool): Automatic stop configuration.
         child_lock (bool): Child lock status.
         compressor_state (str): Compressor state.
         coil_temperature (int): Coil temperature.
@@ -65,8 +63,6 @@ class DehumidifierState(DeviceState):
     __slots__ = (
         'actual_run_level',
         'auto_start',
-        'auto_stop_target_reached',
-        'automatic_stop_config',
         'child_lock',
         'coil_temperature',
         'compressor_state',
@@ -118,9 +114,7 @@ class DehumidifierState(DeviceState):
         """
         super().__init__(device, details, feature_map)
         self.actual_run_level: int | None = None
-        self.auto_stop_target_reached: bool = False
         self.auto_start: bool | None = None
-        self.automatic_stop_config: bool = False
         self.child_lock: bool | None = None
         self.compressor_state: str = DeviceStatus.UNKNOWN
         self.coil_temperature: int | None = None
@@ -155,16 +149,6 @@ class DehumidifierState(DeviceState):
         self.water_sensor_detects_water: bool | None = None
         self.water_sensor_in_place: bool | None = None
         self.work_state: str | None = None
-
-    @property
-    def automatic_stop(self) -> bool:
-        """Return the automatic stop status.
-
-        Returns:
-            bool: True if automatic stop is enabled, False otherwise.
-        """
-        return self.automatic_stop_config
-
 
 class VeSyncDehumidifierBase(VeSyncBaseToggleDevice):
     """Base Class for VeSync Dehumidifiers.
@@ -218,11 +202,6 @@ class VeSyncDehumidifierBase(VeSyncBaseToggleDevice):
     def supports_water_tank_full(self) -> bool:
         """Return True if the device reports a water tank full status."""
         return DehumidifierFeatures.WATER_TANK_FULL in self.features
-
-    @property
-    def supports_automatic_stop(self) -> bool:
-        """Return True if the device supports automatic stop."""
-        return DehumidifierFeatures.AUTO_STOP in self.features
 
     @property
     def supports_display(self) -> bool:
@@ -299,17 +278,6 @@ class VeSyncDehumidifierBase(VeSyncBaseToggleDevice):
         """
 
     @abstractmethod
-    async def toggle_automatic_stop(self, toggle: bool | None = None) -> bool:
-        """Toggle automatic stop when the water tank is full.
-
-        Args:
-            toggle (bool | None): True to enable automatic stop, False to disable.
-
-        Returns:
-            bool: Success of request.
-        """
-
-    @abstractmethod
     async def toggle_display(self, toggle: bool | None = None) -> bool:
         """Toggle the display on/off.
 
@@ -366,22 +334,6 @@ class VeSyncDehumidifierBase(VeSyncBaseToggleDevice):
             bool: Success of request.
         """
         return await self.toggle_display(False)
-
-    async def turn_on_automatic_stop(self) -> bool:
-        """Turn on automatic stop.
-
-        Returns:
-            bool: Success of request.
-        """
-        return await self.toggle_automatic_stop(True)
-
-    async def turn_off_automatic_stop(self) -> bool:
-        """Turn off automatic stop.
-
-        Returns:
-            bool: Success of request.
-        """
-        return await self.toggle_automatic_stop(False)
 
     async def turn_on_child_lock(self) -> bool:
         """Turn on the child lock.
@@ -458,4 +410,11 @@ class VeSyncDehumidifierBase(VeSyncBaseToggleDevice):
         if 'turbo' in self.modes:
             return await self.set_mode(DehumidifierModes.TURBO)
         logger.error('Turbo mode not supported for this device.')
+        return False
+
+    async def set_quiet_mode(self) -> bool:
+        """Set Dehumidifier to Quiet Mode."""
+        if 'quiet' in self.modes:
+            return await self.set_mode(DehumidifierModes.QUIET)
+        logger.error('Quiet mode not supported for this device.')
         return False

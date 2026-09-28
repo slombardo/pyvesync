@@ -856,7 +856,6 @@ dehumidifier_modules: list[DehumidifierMap] = [
         dev_types=['LDH-H251S-WUS'],
         features=[
             DehumidifierFeatures.CHILD_LOCK,
-            DehumidifierFeatures.AUTO_STOP,
             DehumidifierFeatures.DISPLAY,
             DehumidifierFeatures.WATER_TANK_FULL,
             DehumidifierFeatures.MUTE,
@@ -867,11 +866,13 @@ dehumidifier_modules: list[DehumidifierMap] = [
         ],
         modes={
             DehumidifierModes.AUTO: 'auto',
+            DehumidifierModes.QUIET: 'quiet',
             DehumidifierModes.MANUAL: 'manual',
             DehumidifierModes.TURBO: 'turbo',
+            DehumidifierModes.VENTILATION: 'ventilation',
         },
         fan_levels=list(range(1, 4)),
-        target_minmax=(30, 80),
+        target_minmax=(35, 70),
         device_alias='Smart Dehumidifier 25 Pint',
         model_display='LDH-H251S Series',
         model_name='Smart Dehumidifier 25 Pint',
