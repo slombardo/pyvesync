@@ -50,6 +50,29 @@ def build_device_timeout_response() -> dict:
     )
 
 
+def build_power_saving_config_response(
+    enabled: bool = False, slots: list[dict[str, int]] | None = None
+) -> dict:
+    """Build a power-saving config response."""
+    return build_bypass_v2_response(
+        code=0,
+        msg="request success",
+        inner_result={
+            "enabled": int(enabled),
+            "slots": slots or [{"id": 7, "startMin": 1320, "endMin": 420}],
+        },
+    )
+
+
+def build_power_saving_slot_create_response(slot_id: int = 9) -> dict:
+    """Build a power-saving slot create response."""
+    return build_bypass_v2_response(
+        code=0,
+        msg="request success",
+        inner_result={"id": slot_id},
+    )
+
+
 class DehumidifierDefaults:
     device_status = DeviceStatus.ON
     connection_status = ConnectionStatus.ONLINE
@@ -126,6 +149,7 @@ DEHUMIDIFIER_DETAILS = {
         "moldRemovalRemind": int(DehumidifierDefaults.mold_removal_remind),
         "reachTargetState": int(DehumidifierDefaults.reach_target),
         "drainageTypeConfig": DehumidifierDefaults.drainage_type,
+        "drainageType": DehumidifierDefaults.drainage_type,
         "compressorState": int(DehumidifierDefaults.compressor_state),
         "coilTemp": DehumidifierDefaults.coil_temp,
         "exhaustPipeTemp": DehumidifierDefaults.exhaust_pipe_temp,
@@ -156,6 +180,10 @@ for key in METHOD_RESPONSES:
     METHOD_RESPONSES[key]["turn_off_mute"] = build_setter_success_without_result
     METHOD_RESPONSES[key]["turn_on_power_saving"] = build_setter_success_without_result
     METHOD_RESPONSES[key]["turn_off_power_saving"] = build_setter_success_without_result
+    METHOD_RESPONSES[key]["get_power_saving_config"] = build_power_saving_config_response()
+    METHOD_RESPONSES[key]["add_power_saving_slot"] = build_power_saving_slot_create_response()
+    METHOD_RESPONSES[key]["update_power_saving_slot"] = build_setter_success_without_result
+    METHOD_RESPONSES[key]["delete_power_saving_slot"] = build_setter_success_without_result
     METHOD_RESPONSES[key]["turn_on_auto_start"] = build_setter_success_without_result
     METHOD_RESPONSES[key]["turn_off_auto_start"] = build_setter_success_without_result
     METHOD_RESPONSES[key]["turn_on_pump"] = build_setter_success_without_result

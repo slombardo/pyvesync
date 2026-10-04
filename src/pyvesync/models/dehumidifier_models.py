@@ -6,6 +6,7 @@ These models inherit from `BypassV2InnerResult` in the `bypass_models` module.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from pyvesync.models.bypass_models import BypassV2InnerResult
 
@@ -45,6 +46,7 @@ class DehumidifierResult(BypassV2InnerResult):
     waterSensorDetectsWater: int | None = None
     moldRemovalRemind: int | None = None
     reachTargetState: int | None = None
+    drainageType: str | None = None
     drainageTypeConfig: str | None = None
     compressorState: int | None = None
     coilTemp: int | None = None
@@ -52,3 +54,28 @@ class DehumidifierResult(BypassV2InnerResult):
     actualRunLevel: int | None = None
     waterTankFull: int | None = None
     temperature: int | None = None
+    sceneStateList: list[dict[str, Any]] | None = None
+
+
+@dataclass
+class PowerSavingSlot(BypassV2InnerResult):
+    """Power-saving schedule slot."""
+
+    id: int
+    startMin: int
+    endMin: int
+
+
+@dataclass
+class PowerSavingConfigResult(BypassV2InnerResult):
+    """Power-saving configuration response."""
+
+    enabled: int
+    slots: list[PowerSavingSlot] = field(default_factory=list)
+
+
+@dataclass
+class PowerSavingSlotCreateResult(BypassV2InnerResult):
+    """Power-saving slot create response."""
+
+    id: int

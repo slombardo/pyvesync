@@ -62,6 +62,15 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
     """
 
     __slots__ = ()
+    _TARGET_HUMIDITY_MODES = frozenset(
+        {
+            DehumidifierModes.AUTO,
+            DehumidifierModes.QUIET,
+            DehumidifierModes.TURBO,
+        }
+    )
+    _VALIDATED_DRAINAGE_MODES = frozenset({'pump', 'expansionTank'})
+    _FULL_TANK_LEVEL = 10
 
     def __init__(
         self,
@@ -71,6 +80,40 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
     ) -> None:
         """Initialize Dehumidifier class."""
         super().__init__(details, manager, feature_map)
+
+    def _is_tank_full(self, resp_model: models.DehumidifierResult) -> bool:
+        tank_in_place = bool(resp_model.tankInPlace)
+        tank_level_full = resp_model.tankLevel == self._FULL_TANK_LEVEL and tank_in_place
+        sensor_full = bool(resp_model.waterSensorInPlace) and bool(
+            resp_model.waterSensorDetectsWater
+        )
+        return tank_level_full or sensor_full
+
+    def _can_set_target_humidity(self) -> bool:
+        if self.state.mode not in self._TARGET_HUMIDITY_MODES:
+            logger.warning(
+                'Target humidity can only be changed while in auto, quiet, or turbo mode.'
+            )
+            return False
+        if self.state.tank_in_place is False:
+            logger.warning(
+                'Target humidity cannot be changed while the water tank is removed.'
+            )
+            return False
+        if self.state.water_tank_full:
+            logger.warning(
+                'Target humidity cannot be changed while the water tank is full.'
+            )
+            return False
+        return True
+
+    def _normalize_power_saving_slots(
+        self, slots: list[models.PowerSavingSlot]
+    ) -> list[dict[str, int]]:
+        return [
+            {'id': slot.id, 'startMin': slot.startMin, 'endMin': slot.endMin}
+            for slot in slots
+        ]
 
     def _set_state(self, resp_model: models.DehumidifierResult) -> None:
         """Set state from Dehumidifier API result model."""
@@ -83,14 +126,19 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
         self.state.target_humidity = resp_model.targetHumidity
         self.state.humidity = resp_model.humidity
         self.state.work_state = resp_model.workState
-        self.state.fan_speed = resp_model.fanSpeedLevel
+        fan_speed = (
+            resp_model.fanSpeedLevel
+            if resp_model.fanSpeedLevel is not None
+            else resp_model.manualSpeedLevel
+        )
+        self.state.fan_speed = fan_speed
         self.state.manual_fan_speed = resp_model.manualSpeedLevel
         self.state.fan_virtual_speed = resp_model.manualSpeedLevel
         self.state.tank_level = resp_model.tankLevel
         self.state.tank_in_place = (
             bool(resp_model.tankInPlace) if resp_model.tankInPlace is not None else None
         )
-        self.state.water_tank_full = bool(resp_model.waterTankFull)
+        self.state.water_tank_full = self._is_tank_full(resp_model)
         self.state.display_set_status = DeviceStatus.from_int(resp_model.screenSwitch)
         self.state.display_status = DeviceStatus.from_int(resp_model.screenState)
         self.state.schedule_count = resp_model.scheduleCount
@@ -147,7 +195,11 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
             if resp_model.reachTargetState is not None
             else None
         )
-        self.state.drainage_mode = resp_model.drainageTypeConfig
+        self.state.drainage_mode = (
+            resp_model.drainageType
+            if resp_model.drainageType is not None
+            else resp_model.drainageTypeConfig
+        )
         self.state.compressor_state = DeviceStatus.from_int(resp_model.compressorState)
         self.state.coil_temperature = resp_model.coilTemp
         self.state.exhaust_pipe_temperature = resp_model.exhaustPipeTemp
@@ -222,6 +274,8 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
                 self.target_minmax[1],
             )
             return False
+        if not self._can_set_target_humidity():
+            return False
 
         payload_data = {'targetHumidity': humidity}
         r_dict = await self.call_bypassv2_api('setTargetHumidity', payload_data)
@@ -264,9 +318,9 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
             )
             return False
 
-        if self.state.mode != DehumidifierModes.MANUAL:
+        if self.state.mode != DehumidifierModes.VENTILATION:
             logger.warning(
-                'Dehumidifier fan speed can only be changed while in manual mode.'
+                'Dehumidifier fan speed can only be changed while in ventilation mode.'
             )
             return False
 
@@ -276,7 +330,7 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
         if r is None:
             return False
 
-        self.state.mode = DehumidifierModes.MANUAL
+        self.state.mode = DehumidifierModes.VENTILATION
         self.state.fan_speed = level
         self.state.manual_fan_speed = level
         self.state.fan_virtual_speed = level
@@ -352,6 +406,88 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
         self.state.connection_status = ConnectionStatus.ONLINE
         return True
 
+    async def get_power_saving_config(self) -> list[dict[str, int]] | None:
+        """Get the configured power-saving slots."""
+        if not self.supports_power_saving:
+            logger.warning(
+                '%s is a %s does not have power-saving or it is not supported.',
+                self.device_name,
+                self.device_type,
+            )
+            return None
+
+        r_dict = await self.call_bypassv2_api('getPowerSavingConfig')
+        r_model = process_bypassv2_result(
+            self,
+            logger,
+            'get_power_saving_config',
+            r_dict,
+            models.PowerSavingConfigResult,
+        )
+        if r_model is None:
+            return None
+
+        self.state.power_saving_status = DeviceStatus.from_int(r_model.enabled)
+        self.state.power_saving_slots = self._normalize_power_saving_slots(r_model.slots)
+        self.state.connection_status = ConnectionStatus.ONLINE
+        return self.state.power_saving_slots
+
+    async def add_power_saving_slot(self, start_min: int, end_min: int) -> int | None:
+        """Add a power-saving slot and return its id."""
+        if not self.supports_power_saving:
+            logger.warning(
+                '%s is a %s does not have power-saving or it is not supported.',
+                self.device_name,
+                self.device_type,
+            )
+            return None
+
+        payload_data = {'startMin': start_min, 'endMin': end_min}
+        r_dict = await self.call_bypassv2_api('addPowerSavingSlot', payload_data)
+        r_model = process_bypassv2_result(
+            self,
+            logger,
+            'add_power_saving_slot',
+            r_dict,
+            models.PowerSavingSlotCreateResult,
+        )
+        if r_model is None:
+            return None
+
+        self.state.connection_status = ConnectionStatus.ONLINE
+        self.state.power_saving_slots.append(
+            {'id': r_model.id, 'startMin': start_min, 'endMin': end_min}
+        )
+        return r_model.id
+
+    async def update_power_saving_slot(
+        self, slot_id: int, start_min: int, end_min: int
+    ) -> bool:
+        """Update an existing power-saving slot."""
+        if not self.supports_power_saving:
+            logger.warning(
+                '%s is a %s does not have power-saving or it is not supported.',
+                self.device_name,
+                self.device_type,
+            )
+            return False
+
+        payload_data = {'id': slot_id, 'startMin': start_min, 'endMin': end_min}
+        r_dict = await self.call_bypassv2_api('updatePowerSavingSlot', payload_data)
+        r = process_bypassv2_response(
+            self, logger, 'update_power_saving_slot', r_dict
+        )
+        if r is None:
+            return False
+
+        self.state.connection_status = ConnectionStatus.ONLINE
+        for slot in self.state.power_saving_slots:
+            if slot['id'] == slot_id:
+                slot['startMin'] = start_min
+                slot['endMin'] = end_min
+                break
+        return True
+
     async def toggle_auto_start(self, toggle: bool | None = None) -> bool:
         """Toggle auto-start on/off."""
         if not self.supports_auto_start:
@@ -383,7 +519,12 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
             return False
         if toggle is None:
             toggle = self.state.pump_enabled is not True
-        payload_data = {'pumpEnable': int(toggle)}
+        if self.state.pump_installed is False:
+            logger.warning(
+                'Pump control cannot be changed while the pump is not installed.'
+            )
+            return False
+        payload_data = {'pumpSwitch': int(toggle)}
         r_dict = await self.call_bypassv2_api('setPumpSwitch', payload_data)
         r = process_bypassv2_response(self, logger, 'toggle_pump', r_dict)
         if r is None:
@@ -401,16 +542,53 @@ class VeSyncDehumidifier(BypassV2Mixin, VeSyncDehumidifierBase):
                 self.device_type,
             )
             return False
-        payload_data = {'drainageTypeConfig': mode}
+        if mode == 'pump' and self.state.pump_installed is not True:
+            logger.warning('Pump drainage requires an installed pump.')
+            return False
+        if mode == 'expansionTank' and self.state.water_sensor_in_place is not True:
+            logger.warning(
+                'Expansion-tank drainage requires an installed water sensor.'
+            )
+            return False
+        payload_data = {'drainageType': mode}
         r_dict = await self.call_bypassv2_api('setDrainage', payload_data)
         r = process_bypassv2_response(self, logger, 'set_drainage', r_dict)
         if r is None:
             return False
         self.state.drainage_mode = mode
         self.state.connection_status = ConnectionStatus.ONLINE
+        if mode in self._VALIDATED_DRAINAGE_MODES:
+            await self.get_details()
+            if self.state.drainage_mode != mode:
+                logger.warning('Drainage mode did not change to %s after refresh.', mode)
+                return False
         return True
 
     async def get_timer(self) -> Timer | None:
         """Get the timer state reported by the dehumidifier status payload."""
         await self.get_details()
         return self.state.timer
+
+    async def delete_power_saving_slot(self, slot_id: int) -> bool:
+        """Delete an existing power-saving slot."""
+        if not self.supports_power_saving:
+            logger.warning(
+                '%s is a %s does not have power-saving or it is not supported.',
+                self.device_name,
+                self.device_type,
+            )
+            return False
+
+        payload_data = {'id': slot_id}
+        r_dict = await self.call_bypassv2_api('deletePowerSavingSlot', payload_data)
+        r = process_bypassv2_response(
+            self, logger, 'delete_power_saving_slot', r_dict
+        )
+        if r is None:
+            return False
+
+        self.state.connection_status = ConnectionStatus.ONLINE
+        self.state.power_saving_slots = [
+            slot for slot in self.state.power_saving_slots if slot['id'] != slot_id
+        ]
+        return True

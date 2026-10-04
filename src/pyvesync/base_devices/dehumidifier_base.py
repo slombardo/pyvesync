@@ -42,6 +42,7 @@ class DehumidifierState(DeviceState):
         mute_status (str): Mute status.
         mode (str): Current mode.
         power_saving_active (bool): Power-saving active state.
+        power_saving_slots (list[dict]): Power-saving schedule slots.
         power_saving_status (str): Power-saving configured status.
         power_saving_time_sec (int): Power-saving timer value.
         pump_enabled (bool): Pump enabled state.
@@ -81,6 +82,7 @@ class DehumidifierState(DeviceState):
         'mold_removal_reminder',
         'mute_status',
         'power_saving_active',
+        'power_saving_slots',
         'power_saving_status',
         'power_saving_time_sec',
         'pump_enabled',
@@ -133,6 +135,7 @@ class DehumidifierState(DeviceState):
         self.mute_status: str = DeviceStatus.UNKNOWN
         self.mode: str | None = None
         self.power_saving_active: bool | None = None
+        self.power_saving_slots: list[dict[str, int]] = []
         self.power_saving_status: str = DeviceStatus.UNKNOWN
         self.power_saving_time_sec: int | None = None
         self.pump_enabled: bool | None = None
@@ -308,6 +311,24 @@ class VeSyncDehumidifierBase(VeSyncBaseToggleDevice):
         """Toggle power-saving on/off."""
 
     @abstractmethod
+    async def get_power_saving_config(self) -> list[dict[str, int]] | None:
+        """Get power-saving slot configuration."""
+
+    @abstractmethod
+    async def add_power_saving_slot(self, start_min: int, end_min: int) -> int | None:
+        """Add a power-saving slot and return its id."""
+
+    @abstractmethod
+    async def update_power_saving_slot(
+        self, slot_id: int, start_min: int, end_min: int
+    ) -> bool:
+        """Update an existing power-saving slot."""
+
+    @abstractmethod
+    async def delete_power_saving_slot(self, slot_id: int) -> bool:
+        """Delete an existing power-saving slot."""
+
+    @abstractmethod
     async def toggle_auto_start(self, toggle: bool | None = None) -> bool:
         """Toggle auto-start on/off."""
 
@@ -395,14 +416,16 @@ class VeSyncDehumidifierBase(VeSyncBaseToggleDevice):
         return False
 
     async def set_manual_mode(self) -> bool:
-        """Set Dehumidifier to Manual Mode.
+        """Set Dehumidifier to the adjustable fan-speed mode.
 
         Returns:
             bool: Success of request.
         """
+        if 'ventilation' in self.modes:
+            return await self.set_mode(DehumidifierModes.VENTILATION)
         if 'manual' in self.modes:
             return await self.set_mode(DehumidifierModes.MANUAL)
-        logger.error('Manual mode not supported for this device.')
+        logger.error('Manual/ventilation mode not supported for this device.')
         return False
 
     async def set_turbo_mode(self) -> bool:
@@ -417,4 +440,11 @@ class VeSyncDehumidifierBase(VeSyncBaseToggleDevice):
         if 'quiet' in self.modes:
             return await self.set_mode(DehumidifierModes.QUIET)
         logger.error('Quiet mode not supported for this device.')
+        return False
+
+    async def set_ventilation_mode(self) -> bool:
+        """Set Dehumidifier to Ventilation Mode."""
+        if 'ventilation' in self.modes:
+            return await self.set_mode(DehumidifierModes.VENTILATION)
+        logger.error('Ventilation mode not supported for this device.')
         return False

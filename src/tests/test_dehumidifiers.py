@@ -27,11 +27,14 @@ See Also
 """
 
 import logging
+from copy import deepcopy
+
 import call_json_dehumidifiers
+import orjson
 import pyvesync.const as const
 from base_test_cases import TestBase
 from pyvesync.base_devices.dehumidifier_base import VeSyncDehumidifierBase
-from utils import assert_test, parse_args
+from utils import CALL_API_ARGS, api_scrub, assert_test, parse_args
 
 
 logger = logging.getLogger(__name__)
@@ -87,6 +90,7 @@ class TestDehumidifiers(TestBase):
         ["set_auto_mode"],
         ["set_quiet_mode"],
         ["set_manual_mode"],
+        ["set_ventilation_mode"],
         ["set_turbo_mode"],
         ["set_fan_speed", {"level": 2}],
         ["turn_on_child_lock"],
@@ -95,11 +99,14 @@ class TestDehumidifiers(TestBase):
         ["turn_off_mute"],
         ["turn_on_power_saving"],
         ["turn_off_power_saving"],
+        ["get_power_saving_config"],
+        ["add_power_saving_slot", {"start_min": 1320, "end_min": 420}],
+        ["update_power_saving_slot", {"slot_id": 7, "start_min": 1260, "end_min": 360}],
+        ["delete_power_saving_slot", {"slot_id": 7}],
         ["turn_on_auto_start"],
         ["turn_off_auto_start"],
         ["turn_on_pump"],
         ["turn_off_pump"],
-        ["set_drainage", {"mode": "pump"}],
         ["get_timer"],
     ]
     device_methods: dict = {}
@@ -214,10 +221,16 @@ class TestDehumidifiers(TestBase):
             dehumid_obj.state.mode = const.DehumidifierModes.AUTO
         elif method[0] == "set_manual_mode":
             dehumid_obj.state.mode = const.DehumidifierModes.AUTO
+        elif method[0] == "set_ventilation_mode":
+            dehumid_obj.state.mode = const.DehumidifierModes.AUTO
         elif method[0] == "set_turbo_mode":
             dehumid_obj.state.mode = const.DehumidifierModes.AUTO
+        elif method[0] == "set_humidity":
+            dehumid_obj.state.mode = const.DehumidifierModes.TURBO
+            dehumid_obj.state.tank_in_place = True
+            dehumid_obj.state.water_tank_full = False
         elif method[0] == "set_fan_speed":
-            dehumid_obj.state.mode = const.DehumidifierModes.MANUAL
+            dehumid_obj.state.mode = const.DehumidifierModes.VENTILATION
         elif method[0] == "turn_on_mute":
             dehumid_obj.state.mute_status = const.DeviceStatus.OFF
         elif method[0] == "turn_off_mute":
@@ -226,13 +239,25 @@ class TestDehumidifiers(TestBase):
             dehumid_obj.state.power_saving_status = const.DeviceStatus.OFF
         elif method[0] == "turn_off_power_saving":
             dehumid_obj.state.power_saving_status = const.DeviceStatus.ON
+        elif method[0] == "add_power_saving_slot":
+            dehumid_obj.state.power_saving_slots = []
+        elif method[0] == "update_power_saving_slot":
+            dehumid_obj.state.power_saving_slots = [
+                {"id": 7, "startMin": 1320, "endMin": 420}
+            ]
+        elif method[0] == "delete_power_saving_slot":
+            dehumid_obj.state.power_saving_slots = [
+                {"id": 7, "startMin": 1320, "endMin": 420}
+            ]
         elif method[0] == "turn_on_auto_start":
             dehumid_obj.state.auto_start = False
         elif method[0] == "turn_off_auto_start":
             dehumid_obj.state.auto_start = True
         elif method[0] == "turn_on_pump":
+            dehumid_obj.state.pump_installed = True
             dehumid_obj.state.pump_enabled = False
         elif method[0] == "turn_off_pump":
+            dehumid_obj.state.pump_installed = True
             dehumid_obj.state.pump_enabled = True
 
         if method_kwargs:
@@ -245,7 +270,9 @@ class TestDehumidifiers(TestBase):
         elif method[0] == "set_quiet_mode":
             assert dehumid_obj.state.mode == const.DehumidifierModes.QUIET
         elif method[0] == "set_manual_mode":
-            assert dehumid_obj.state.mode == const.DehumidifierModes.MANUAL
+            assert dehumid_obj.state.mode == const.DehumidifierModes.VENTILATION
+        elif method[0] == "set_ventilation_mode":
+            assert dehumid_obj.state.mode == const.DehumidifierModes.VENTILATION
         elif method[0] == "set_turbo_mode":
             assert dehumid_obj.state.mode == const.DehumidifierModes.TURBO
         elif method[0] == "set_humidity":
@@ -264,6 +291,20 @@ class TestDehumidifiers(TestBase):
             assert dehumid_obj.state.power_saving_status == const.DeviceStatus.ON
         elif method[0] == "turn_off_power_saving":
             assert dehumid_obj.state.power_saving_status == const.DeviceStatus.OFF
+        elif method[0] == "get_power_saving_config":
+            assert dehumid_obj.state.power_saving_slots == [
+                {"id": 7, "startMin": 1320, "endMin": 420}
+            ]
+        elif method[0] == "add_power_saving_slot":
+            assert dehumid_obj.state.power_saving_slots == [
+                {"id": 9, "startMin": 1320, "endMin": 420}
+            ]
+        elif method[0] == "update_power_saving_slot":
+            assert dehumid_obj.state.power_saving_slots == [
+                {"id": 7, "startMin": 1260, "endMin": 360}
+            ]
+        elif method[0] == "delete_power_saving_slot":
+            assert dehumid_obj.state.power_saving_slots == []
         elif method[0] == "turn_on_auto_start":
             assert dehumid_obj.state.auto_start is True
         elif method[0] == "turn_off_auto_start":
@@ -272,8 +313,6 @@ class TestDehumidifiers(TestBase):
             assert dehumid_obj.state.pump_enabled is True
         elif method[0] == "turn_off_pump":
             assert dehumid_obj.state.pump_enabled is False
-        elif method[0] == "set_drainage":
-            assert dehumid_obj.state.drainage_mode == method_kwargs["mode"]
         elif method[0] == "get_timer":
             assert dehumid_obj.state.timer is not None
             assert (
@@ -295,6 +334,9 @@ class TestDehumidifiers(TestBase):
         )
         dehumid_obj = self.get_device("dehumidifiers", "LDH-H251S")
         assert isinstance(dehumid_obj, VeSyncDehumidifierBase)
+        dehumid_obj.state.mode = const.DehumidifierModes.TURBO
+        dehumid_obj.state.tank_in_place = True
+        dehumid_obj.state.water_tank_full = False
 
         result = self.run_in_loop(dehumid_obj.set_humidity, humidity=50)
 
@@ -326,8 +368,8 @@ class TestDehumidifiers(TestBase):
         assert self.run_in_loop(dehumid_obj.set_humidity, humidity=71) is False
         self.mock_api.assert_not_called()
 
-    def test_fan_speed_requires_manual_mode(self):
-        """Test manual fan speed changes are rejected outside manual mode."""
+    def test_fan_speed_requires_ventilation_mode(self):
+        """Test manual fan speed changes are rejected outside ventilation mode."""
         dehumid_obj = self.get_device("dehumidifiers", "LDH-H251S")
         assert isinstance(dehumid_obj, VeSyncDehumidifierBase)
         dehumid_obj.state.mode = const.DehumidifierModes.TURBO
@@ -336,6 +378,128 @@ class TestDehumidifiers(TestBase):
 
         assert result is False
         self.mock_api.assert_not_called()
+
+    def test_humidity_requires_supported_mode_and_tank_ready(self):
+        """Test target humidity changes follow the verified UI business rules."""
+        dehumid_obj = self.get_device("dehumidifiers", "LDH-H251S")
+        assert isinstance(dehumid_obj, VeSyncDehumidifierBase)
+
+        dehumid_obj.state.mode = const.DehumidifierModes.VENTILATION
+        assert self.run_in_loop(dehumid_obj.set_humidity, humidity=50) is False
+
+        dehumid_obj.state.mode = const.DehumidifierModes.AUTO
+        dehumid_obj.state.tank_in_place = False
+        assert self.run_in_loop(dehumid_obj.set_humidity, humidity=50) is False
+
+        dehumid_obj.state.tank_in_place = True
+        dehumid_obj.state.water_tank_full = True
+        assert self.run_in_loop(dehumid_obj.set_humidity, humidity=50) is False
+
+        self.mock_api.assert_not_called()
+
+    def test_tank_full_uses_status_code_and_water_sensor(self):
+        """Test full-tank status is derived from tank level and water sensor state."""
+        response = deepcopy(call_json_dehumidifiers.DETAILS_RESPONSES["LDH-H251S"])
+        inner = response["result"]["result"]
+        inner["tankLevel"] = 10
+        inner["tankInPlace"] = 1
+        inner["waterSensorInPlace"] = 0
+        inner["waterSensorDetectsWater"] = 0
+        self.mock_api.return_value = (response, 200)
+
+        dehumid_obj = self.get_device("dehumidifiers", "LDH-H251S")
+        assert isinstance(dehumid_obj, VeSyncDehumidifierBase)
+        self.run_in_loop(dehumid_obj.get_details)
+        assert dehumid_obj.state.water_tank_full is True
+
+        response = deepcopy(call_json_dehumidifiers.DETAILS_RESPONSES["LDH-H251S"])
+        inner = response["result"]["result"]
+        inner["tankLevel"] = 1
+        inner["tankInPlace"] = 1
+        inner["waterSensorInPlace"] = 1
+        inner["waterSensorDetectsWater"] = 1
+        self.mock_api.return_value = (response, 200)
+        self.run_in_loop(dehumid_obj.get_details)
+        assert dehumid_obj.state.water_tank_full is True
+
+    def test_set_drainage_refreshes_and_validates_state(self):
+        """Test pump drainage refreshes status and confirms the applied mode."""
+        response = deepcopy(call_json_dehumidifiers.DETAILS_RESPONSES["LDH-H251S"])
+        response["result"]["result"]["drainageType"] = "pump"
+        response["result"]["result"]["drainageTypeConfig"] = "pump"
+        self.mock_api.side_effect = [
+            (call_json_dehumidifiers.build_setter_success_without_result(), 200),
+            (response, 200),
+        ]
+
+        dehumid_obj = self.get_device("dehumidifiers", "LDH-H251S")
+        assert isinstance(dehumid_obj, VeSyncDehumidifierBase)
+        dehumid_obj.state.pump_installed = True
+
+        result = self.run_in_loop(dehumid_obj.set_drainage, mode="pump")
+
+        assert result is True
+        assert dehumid_obj.state.drainage_mode == "pump"
+
+        setter_call = dict(zip(CALL_API_ARGS, self.mock_api.call_args_list[0].args))
+        setter_call.update(self.mock_api.call_args_list[0].kwargs)
+        status_call = dict(zip(CALL_API_ARGS, self.mock_api.call_args_list[1].args))
+        status_call.update(self.mock_api.call_args_list[1].kwargs)
+        setter_call["json_object"] = orjson.loads(setter_call["json_object"].to_json())
+        status_call["json_object"] = orjson.loads(status_call["json_object"].to_json())
+        setter_call = api_scrub(setter_call, "LDH-H251S")
+        status_call = api_scrub(status_call, "LDH-H251S")
+        assert setter_call["url"] == "/cloud/v2/deviceManaged/bypassV2"
+        assert setter_call["method"] == "post"
+        assert setter_call["json_object"]["payload"] == {
+            "data": {"drainageType": "pump"},
+            "method": "setDrainage",
+            "source": "APP",
+        }
+        assert (
+            status_call["json_object"]["payload"]["method"] == "getDeHumidifierStatus"
+        )
+
+    def test_set_drainage_requires_matching_hardware(self):
+        """Test drainage mode preconditions use the documented hardware checks."""
+        dehumid_obj = self.get_device("dehumidifiers", "LDH-H251S")
+        assert isinstance(dehumid_obj, VeSyncDehumidifierBase)
+
+        dehumid_obj.state.pump_installed = False
+        assert self.run_in_loop(dehumid_obj.set_drainage, mode="pump") is False
+
+        dehumid_obj.state.pump_installed = True
+        dehumid_obj.state.water_sensor_in_place = False
+        assert self.run_in_loop(dehumid_obj.set_drainage, mode="expansionTank") is False
+
+        self.mock_api.assert_not_called()
+
+    def test_toggle_pump_requires_installed_pump(self):
+        """Test pump switching is blocked when no pump is installed."""
+        dehumid_obj = self.get_device("dehumidifiers", "LDH-H251S")
+        assert isinstance(dehumid_obj, VeSyncDehumidifierBase)
+        dehumid_obj.state.pump_installed = False
+
+        assert self.run_in_loop(dehumid_obj.toggle_pump, toggle=True) is False
+        self.mock_api.assert_not_called()
+
+    def test_add_power_saving_slot_returns_id(self):
+        """Test power-saving slot creation returns the new slot id."""
+        self.mock_api.return_value = (
+            call_json_dehumidifiers.build_power_saving_slot_create_response(slot_id=11),
+            200,
+        )
+        dehumid_obj = self.get_device("dehumidifiers", "LDH-H251S")
+        assert isinstance(dehumid_obj, VeSyncDehumidifierBase)
+
+        slot_id = self.run_in_loop(
+            dehumid_obj.add_power_saving_slot, start_min=300, end_min=480
+        )
+
+        assert slot_id == 11
+        assert dehumid_obj.state.power_saving_slots == [
+            {"id": 11, "startMin": 300, "endMin": 480}
+        ]
 
     def test_timer_set_not_supported(self):
         """Test dehumidifier timer creation is not advertised without verified API."""
