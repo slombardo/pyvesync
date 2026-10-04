@@ -8,6 +8,14 @@
 
 **Input**: User description: "We need to add support for the vesync dehumidifiers. We need to allow for all the dehumidifier commands for vesync"
 
+> **Post-implementation revision**: Based on maintainer feedback that a dehumidifier
+> should not be grouped under `manager.devices.humidifiers`, the implementation was
+> refactored into an independent `Dehumidifier` product family with its own
+> `ProductTypes.DEHUMIDIFIER`, `DehumidifierMap`, `manager.devices.dehumidifiers`
+> container property, and dedicated device/base/model modules, rather than the
+> humidifier-family model described in the "Assumptions" section below. See
+> `tasks.md` for details of the affected files.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Discover and manage a supported dehumidifier (Priority: P1)
@@ -27,31 +35,31 @@ A user with a VeSync dehumidifier wants the library to recognize the device, lis
 
 ### User Story 2 - Control the dehumidifier's core operating functions (Priority: P1)
 
-A user wants to turn the dehumidifier on and off and adjust the operating modes that are normally available from the VeSync app, without needing custom API calls.
+A user wants to turn the dehumidifier on and off, change its speed/mode between Quiet, Auto, and Turbo, and adjust the target humidity within the supported 35-70% range without needing custom API calls.
 
 **Why this priority**: Core control operations are the main value of the feature and are critical to support real-world use.
 
-**Independent Test**: A user can issue standard commands for power, mode selection, and target humidity changes and observe the resulting device state updates.
+**Independent Test**: A user can issue standard commands for power, Quiet/Auto/Turbo mode selection, and target humidity changes within 35-70% and observe the resulting device state updates.
 
 **Acceptance Scenarios**:
 
 1. **Given** a connected dehumidifier, **When** the user sends a power command, **Then** the device transitions to the requested on or off state and the state is reflected in library data.
-2. **Given** a connected dehumidifier, **When** the user sets a mode or target humidity, **Then** the library sends the request through the standard library API and updates the device state consistently.
+2. **Given** a connected dehumidifier, **When** the user sets Quiet, Auto, or Turbo mode or updates the target humidity within 35-70%, **Then** the library sends the request through the standard library API and updates the device state consistently.
 
 ---
 
 ### User Story 3 - Access advanced dehumidifier controls and monitoring (Priority: P2)
 
-A user wants to manage advanced settings such as fan speeds, timers, humidity targets, child lock behavior, or continuous-operation modes in a consistent way across supported devices.
+A user wants to manage advanced settings such as timers, e-save, child lock behavior, and supported device toggles such as pump, mute, and auto-start in a consistent way across supported devices.
 
 **Why this priority**: These features increase usability and parity with the official app, but the minimum viable release can still provide value without every advanced mode.
 
-**Independent Test**: A user can inspect multiple available dehumidifier capabilities and change supported modes or settings through the library without unsupported ad hoc methods.
+**Independent Test**: A user can inspect multiple available dehumidifier capabilities and change supported timers or advanced toggles through the library without unsupported ad hoc methods.
 
 **Acceptance Scenarios**:
 
-1. **Given** a dehumidifier exposing advanced settings, **When** the user requests available controls or state properties, **Then** the library exposes the supported options through the standard device contract.
-2. **Given** a dehumidifier with a valid advanced control request, **When** the user changes a supported setting, **Then** the new state is reflected in the device object and persists through the next refresh.
+1. **Given** a dehumidifier exposing advanced settings, **When** the user requests available controls or state properties, **Then** the library exposes supported timer, e-save, pump, mute, and auto-start options through the standard device contract.
+2. **Given** a dehumidifier with a valid advanced control request, **When** the user sets a timer or changes a supported advanced toggle such as e-save, pump, mute, or auto-start, **Then** the new state is reflected in the device object and persists through the next refresh.
 
 ---
 
@@ -60,6 +68,7 @@ A user wants to manage advanced settings such as fan speeds, timers, humidity ta
 - What happens when a dehumidifier is offline or the API returns an error during a state refresh?
 - How does the system handle a dehumidifier that does not support a given setting or mode?
 - What happens when device metadata or state reports values outside the expected operational range?
+- How does the system behave when a user requests a target humidity outside the supported 35-70% range?
 - How does the system behave when a user requests a setting not supported by the model or firmware?
 
 ## Requirements *(mandatory)*
@@ -70,18 +79,19 @@ A user wants to manage advanced settings such as fan speeds, timers, humidity ta
 - **FR-002**: The system MUST expose dehumidifier devices through the library's standard device container and type model in the same way as other supported VeSync device families.
 - **FR-003**: The system MUST support retrieving the dehumidifier's operational state, environmental readings, and availability status.
 - **FR-004**: The system MUST support the standard power commands needed to turn a dehumidifier on and off.
-- **FR-005**: The system MUST support the primary mode and humidity control commands exposed by VeSync dehumidifiers.
-- **FR-006**: The system MUST surface any supported dehumidifier-specific settings that are exposed by the VeSync API through the device model contract.
-- **FR-007**: The system MUST expose device errors, unsupported operations, and API failures in a way consistent with the library's existing error handling patterns.
-- **FR-008**: The system MUST preserve the project's existing naming and behavior conventions for device state, actions, and helper methods across device families.
-- **FR-009**: The system MUST include or update tests to validate dehumidifier discovery, command handling, and state parsing against recorded API responses.
-- **FR-010**: The system MUST keep the new functionality documented in the project documentation and examples when user-facing behavior changes.
+- **FR-005**: The system MUST support the primary mode and humidity control commands exposed by VeSync dehumidifiers, including Quiet, Auto, and Turbo speed/mode changes where supported.
+- **FR-006**: The system MUST support updating target humidity within the supported 35-70% range and reject values outside the supported range using the library's standard validation behavior.
+- **FR-007**: The system MUST surface supported dehumidifier-specific settings exposed by the VeSync API through the device model contract, including timer support, e-save, pump, mute, and auto-start where supported by the model.
+- **FR-008**: The system MUST expose device errors, unsupported operations, and API failures in a way consistent with the library's existing error handling patterns.
+- **FR-009**: The system MUST preserve the project's existing naming and behavior conventions for device state, actions, and helper methods across device families.
+- **FR-010**: The system MUST include or update tests to validate dehumidifier discovery, command handling, and state parsing against recorded API responses.
+- **FR-011**: The system MUST keep the new functionality documented in the project documentation and examples when user-facing behavior changes.
 
 ### Key Entities *(include if feature involves data)*
 
 - **VeSync Dehumidifier**: A supported home appliance represented by the library as a distinct device type with operational state, environment readings, and configuration controls.
 - **Device State**: The current runtime status of the dehumidifier, including power state, mode, target settings, and environmental metrics.
-- **Device Command**: A user-initiated action such as power toggle, mode change, humidity target adjustment, or supported advanced setting update.
+- **Device Command**: A user-initiated action such as power toggle, Quiet/Auto/Turbo mode change, humidity target adjustment within 35-70%, timer scheduling, or supported advanced setting update such as e-save, pump, mute, or auto-start.
 - **Recorded API Fixture**: A representative API payload used to validate parsing, command flows, and regression safety for the device family.
 
 ## Success Criteria *(mandatory)*
@@ -89,7 +99,7 @@ A user wants to manage advanced settings such as fan speeds, timers, humidity ta
 ### Measurable Outcomes
 
 - **SC-001**: Users can discover a supported VeSync dehumidifier through the standard device enumeration flow without custom per-device workarounds.
-- **SC-002**: Users can complete the primary power and mode-control workflows for a dehumidifier without unsupported or ad hoc API calls.
+- **SC-002**: Users can complete the primary power, Quiet/Auto/Turbo mode-control, and 35-70% humidity-target workflows for a dehumidifier without unsupported or ad hoc API calls.
 - **SC-003**: The dehumidifier support passes the project’s required linting, typing, and test checks before merge.
 - **SC-004**: At least one end-to-end regression path verifies the dehumidifier state parsing and command flow using the project’s existing fixture-based testing model.
 - **SC-005**: Documentation and examples are updated for any user-visible dehumidifier behavior or API exposure added by the feature.

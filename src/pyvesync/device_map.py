@@ -8,9 +8,10 @@ The mappings are used to create instances of the appropriate device class
 based on the device type and define features and modes. The device type is taken
 from the `deviceType` field in the device list API.
 
-The AirFryerMap, OutletMap, SwitchMap, BulbMap, FanMap, HumidifierMap, PurifierMap
-and ThermostatMap dataclasses are used to define the mappings for each product type
-with the associated module, class, features and other device specific configuration. The
+The AirFryerMap, OutletMap, SwitchMap, BulbMap, FanMap, HumidifierMap, DehumidifierMap,
+PurifierMap and ThermostatMap dataclasses are used to define the mappings for each
+product type with the associated module, class, features and other device specific
+configuration. The
 [`get_device_config`][pyvesync.device_map.get_device_config] function is used
 to get the device map object from the device type to instantiate the appropriate class.
 The individual `get_<product-type>` functions are used to get the device details
@@ -25,6 +26,7 @@ Attributes:
     fan_modules: list[FanMap]: List of Fan device mappings.
     purifier_modules: list[PurifierMap]: List of Purifier device mappings.
     humidifier_modules: list[HumidifierMap]: List of Humidifier device mappings.
+    dehumidifier_modules: list[DehumidifierMap]: List of Dehumidifier device mappings.
     air_fryer_modules: list[AirFryerMap]: List of Air Fryer device mappings.
     thermostat_modules: list[ThermostatMap]: List of Thermostat device mappings.
 
@@ -36,6 +38,7 @@ Classes:
     BulbMap: dataclass: Template for Bulb device mapping.
     FanMap: dataclass: Template for Fan device mapping.
     HumidifierMap: dataclass: Template for Humidifier device mapping.
+    DehumidifierMap: dataclass: Template for Dehumidifier device mapping.
     PurifierMap: dataclass: Template for Purifier device mapping.
     AirFryerMap: dataclass: Template for Air Fryer device mapping.
     ThermostatMap: dataclass: Template for Thermostat device mapping.
@@ -47,6 +50,7 @@ Functions:
     get_bulb: Get the bulb device config, returning BulbMap object.
     get_fan: Get the fan device config, returning the FanMap object.
     get_humidifier: Get the humidfier config, returning the HumidifierMap object.
+    get_dehumidifier: Get the dehumidifier config, returning the DehumidifierMap object.
     get_purifier: Get the purifier config, returning the PurifierMap object.
     get_air_fryer: Get the Air Fryer config, returning the AirFryerMap object.
     get_thermostat: Get the thermostat config, returning the ThermostatMap object.
@@ -67,6 +71,8 @@ from typing import Union
 from pyvesync.const import (
     BulbFeatures,
     ColorMode,
+    DehumidifierFeatures,
+    DehumidifierModes,
     EnergyIntervals,
     FanFeatures,
     FanModes,
@@ -89,6 +95,7 @@ from pyvesync.const import (
 )
 from pyvesync.devices import (
     vesyncbulb,
+    vesyncdehumidifier,
     vesyncfan,
     vesynchumidifier,
     vesynckitchen,
@@ -104,6 +111,7 @@ T_MAPS = Union[  # noqa: UP007, RUF100
     list['BulbMap'],
     list['FanMap'],
     list['HumidifierMap'],
+    list['DehumidifierMap'],
     list['PurifierMap'],
     list['AirFryerMap'],
     list['ThermostatMap'],
@@ -248,6 +256,34 @@ class FanMap(DeviceMapTemplate):
     modes: dict[str, str] = field(default_factory=dict)
     sleep_preferences: list[str] = field(default_factory=list)
     set_mode_method: str = ''
+
+
+@dataclass(kw_only=True)
+class DehumidifierMap(DeviceMapTemplate):
+    """Template for DeviceModules mapping.
+
+    Attributes:
+        dev_types (list[str]): List of device types to match from API.
+        class_name (str): Class name of the device.
+        product_type (str): Product type of the device - ProductTypes.DEHUMIDIFIER
+        module (ModuleType): Module for the device.
+        setup_entry (str): Setup entry for the device, if unknown use the device_type
+            base without region
+        model_display (str): Display name of the model.
+        model_name (str): Name of the model.
+        device_alias (str | None): Alias for the device, if any.
+        features (list[str]): List of features for the device.
+        fan_levels (list[int]): List of fan speed levels for the device.
+        modes (dict[str, str]): Dictionary of operating modes for the device.
+        target_minmax (tuple[int, int]): Minimum and maximum target humidity levels.
+    """
+
+    product_line: str = ProductLines.WIFI_AIR
+    product_type: str = ProductTypes.DEHUMIDIFIER
+    module: ModuleType = vesyncdehumidifier
+    fan_levels: list[int] = field(default_factory=list)
+    modes: dict[str, str] = field(default_factory=dict)
+    target_minmax: tuple[int, int] = (0, 100)
 
 
 @dataclass(kw_only=True)
@@ -814,6 +850,39 @@ humidifier_modules = [
 objects for humidifier devices."""
 
 
+dehumidifier_modules: list[DehumidifierMap] = [
+    DehumidifierMap(
+        class_name='VeSyncDehumidifier',
+        dev_types=['LDH-H251S-WUS'],
+        features=[
+            DehumidifierFeatures.CHILD_LOCK,
+            DehumidifierFeatures.DISPLAY,
+            DehumidifierFeatures.WATER_TANK_FULL,
+            DehumidifierFeatures.MUTE,
+            DehumidifierFeatures.POWER_SAVING,
+            DehumidifierFeatures.AUTO_START,
+            DehumidifierFeatures.PUMP,
+            DehumidifierFeatures.DRAINAGE,
+        ],
+        modes={
+            DehumidifierModes.AUTO: 'auto',
+            DehumidifierModes.QUIET: 'quiet',
+            DehumidifierModes.MANUAL: 'manual',
+            DehumidifierModes.TURBO: 'turbo',
+            DehumidifierModes.VENTILATION: 'ventilation',
+        },
+        fan_levels=list(range(1, 4)),
+        target_minmax=(35, 70),
+        device_alias='Smart Dehumidifier 25 Pint',
+        model_display='LDH-H251S Series',
+        model_name='Smart Dehumidifier 25 Pint',
+        setup_entry='LDH-H251S',
+    ),
+]
+"""List of ['DehumidifierMap'][pyvesync.device_map.DehumidifierMap] configuration
+objects for dehumidifier devices."""
+
+
 purifier_modules: list[PurifierMap] = [
     PurifierMap(
         class_name='VeSyncAirBypass',
@@ -1111,6 +1180,7 @@ full_device_list = [
     *fan_modules,
     *purifier_modules,
     *humidifier_modules,
+    *dehumidifier_modules,
     *air_fryer_modules,
     *thermostat_modules,
 ]
@@ -1133,6 +1203,7 @@ def get_device_config(device_type: str) -> DeviceMapTemplate | None:
         fan_modules,
         purifier_modules,
         humidifier_modules,
+        dehumidifier_modules,
         air_fryer_modules,
         thermostat_modules,
     ]
@@ -1203,6 +1274,26 @@ def get_humidifier(device_type: str) -> HumidifierMap | None:
     if device_type.count('-') > 1:
         device_type = '-'.join(device_type.split('-')[:-1])
         for module in humidifier_modules:
+            if any(device_type.lower() in dev.lower() for dev in module.dev_types):
+                return module
+    return None
+
+
+def get_dehumidifier(device_type: str) -> DehumidifierMap | None:
+    """Get dehumidifier device details from device type.
+
+    Args:
+        device_type (str): Device type to match from device list API call.
+
+    Returns:
+        DehumidifierMap | None: DehumidifierMap object or None if not found.
+    """
+    for module in dehumidifier_modules:
+        if device_type in module.dev_types:
+            return module
+    if device_type.count('-') > 1:
+        device_type = '-'.join(device_type.split('-')[:-1])
+        for module in dehumidifier_modules:
             if any(device_type.lower() in dev.lower() for dev in module.dev_types):
                 return module
     return None

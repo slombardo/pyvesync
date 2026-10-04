@@ -99,6 +99,7 @@ class ProductTypes(StrEnum):
     PURIFIER = 'purifier'
     FAN = 'fan'
     HUMIDIFIER = 'humidifier'
+    DEHUMIDIFIER = 'dehumidifier'
     AIR_FRYER = 'air fryer'
     KITCHEN_THERMOMETER = 'kitchen thermometer'
     THERMOSTAT = 'thermostat'
@@ -662,6 +663,52 @@ class HumidifierModes(Features):
     TURBO = 'turbo'
     PET = 'pet'
     UNKNOWN = 'unknown'
+
+
+class DehumidifierFeatures(Features):
+    """VeSync dehumidifier features.
+
+    Attributes:
+        ONOFF: Device on/off status.
+        CHILD_LOCK: Child lock status.
+        AUTO_STOP: Auto stop when the water tank is full.
+        DISPLAY: Display on/off status.
+        WATER_TANK_FULL: Water tank full status.
+        MUTE: Mute status.
+        POWER_SAVING: Power saving status.
+        AUTO_START: Auto-start status.
+        PUMP: Pump status.
+        DRAINAGE: Drainage mode control.
+    """
+
+    ONOFF = 'onoff'
+    CHILD_LOCK = 'child_lock'
+    AUTO_STOP = 'auto_stop'
+    DISPLAY = 'display'
+    WATER_TANK_FULL = 'water_tank_full'
+    MUTE = 'mute'
+    POWER_SAVING = 'power_saving'
+    AUTO_START = 'auto_start'
+    PUMP = 'pump'
+    DRAINAGE = 'drainage'
+
+
+class DehumidifierModes(Features):
+    """VeSync dehumidifier modes.
+
+    Attributes:
+        AUTO: Auto mode.
+        QUIET: Quiet mode.
+        MANUAL: Manual mode.
+        TURBO: Turbo mode.
+        VENTILATION: Ventilation mode.
+    """
+
+    AUTO = 'auto'
+    QUIET = 'quiet'
+    MANUAL = 'manual'
+    TURBO = 'turbo'
+    VENTILATION = 'ventilation'
 
 
 class FanModes(StrEnum):
